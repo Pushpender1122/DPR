@@ -6,6 +6,9 @@ const ExcelJS = require('exceljs');
 const fs = require('fs');
 const path = require('path');
 const session = require('express-session');
+const dotenv = require('dotenv');
+
+dotenv.config()
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -20,11 +23,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Set up session middleware
 app.use(session({
-    secret: 'faculty-reporter-secret-key',
+    secret: process.env.SECRET || 'faculty-reporter-secret-key',
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false, // set to true if using HTTPS
+        secure: process.env.NODE_ENV === 'production', // set to true if using HTTPS
         maxAge: 3600000 // 1 hour
     }
 }));
