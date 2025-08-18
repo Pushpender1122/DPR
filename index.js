@@ -14,8 +14,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Admin credentials - hardcoded for now
-const ADMIN_USERNAME = 'admin';
-const ADMIN_PASSWORD = 'admin';
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -216,8 +216,7 @@ app.get('/admin/login', (req, res) => {
 // Admin login submission
 app.post('/admin/login', (req, res) => {
     const { username, password } = req.body;
-
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    if (username.toLowerCase() === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
         req.session.isAdmin = true;
         return res.redirect('/admin');
     } else {
