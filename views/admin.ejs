@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Faculty Reports Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50 min-h-screen p-6">
+    <div class="w-full max-w-6xl mx-auto bg-white rounded-2xl shadow p-8">
+        <h1 class="text-2xl font-bold mb-4">Faculty Reports Admin Dashboard</h1>
+
+        <% if (locals.error) { %>
+            <div class="mb-4 p-3 rounded bg-red-100 text-red-800">
+                <%= error %>
+            </div>
+            <% } %>
+
+                <div class="flex justify-between mb-4">
+                    <a href="/" class="px-4 py-2 bg-blue-600 text-white rounded">Back to Form</a>
+                    <a href="/export" class="px-4 py-2 bg-green-600 text-white rounded">Download Excel</a>
+                    <a href="/export-to-sheets" class="px-4 py-2 bg-yellow-600 text-white rounded">Export to Google
+                        Sheets</a>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full border border-gray-200">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="px-4 py-2 border">UID</th>
+                                <th class="px-4 py-2 border">Name</th>
+                                <th class="px-4 py-2 border">Team</th>
+                                <th class="px-4 py-2 border">Report Date</th>
+                                <th class="px-4 py-2 border">Activities</th>
+                                <th class="px-4 py-2 border">Submitted At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (locals.reports && reports.length> 0) { %>
+                                <% reports.forEach(report=> { %>
+                                    <tr>
+                                        <td class="px-4 py-2 border">
+                                            <%= report.uid %>
+                                        </td>
+                                        <td class="px-4 py-2 border">
+                                            <%= report.name %>
+                                        </td>
+                                        <td class="px-4 py-2 border">
+                                            <%= report.team %>
+                                        </td>
+                                        <td class="px-4 py-2 border">
+                                            <%= report.report_date %>
+                                        </td>
+                                        <td class="px-4 py-2 border">
+                                            <ul class="list-disc pl-5">
+                                                <% report.activities.forEach(activity=> { %>
+                                                    <li>
+                                                        <%= activity.name %> - <%= activity.count %>
+                                                    </li>
+                                                    <% }) %>
+                                            </ul>
+                                        </td>
+                                        <td class="px-4 py-2 border">
+                                            <%= new Date(report.submitted_at).toLocaleString() %>
+                                        </td>
+                                    </tr>
+                                    <% }) %>
+                                        <% } else { %>
+                                            <tr>
+                                                <td colspan="6" class="px-4 py-2 border text-center">No reports found
+                                                </td>
+                                            </tr>
+                                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+    </div>
+</body>
+
+</html>
