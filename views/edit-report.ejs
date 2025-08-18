@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Edit Report | Faculty Reports</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Basic form styles to ensure inputs render correctly */
+        input,
+        select,
+        textarea {
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Enhanced styles for primary form fields */
+        .primary-input {
+            background-color: #f9fafb;
+            border: 1px solid #d1d5db;
+            padding: 0.625rem 0.75rem;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .primary-input:hover {
+            border-color: #9ca3af;
+            background-color: #ffffff;
+        }
+
+        .primary-input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+            background-color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .primary-label {
+            color: #4b5563;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            display: block;
+            font-size: 0.875rem;
+        }
+
+        .primary-label::after {
+            content: "";
+            display: inline-block;
+            width: 0.25rem;
+            height: 0.25rem;
+            border-radius: 50%;
+            background-color: #6366f1;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+
+        .team-activities {
+            display: block;
+        }
+
+        .team-activities.hidden {
+            display: none;
+        }
+
+        /* Custom styling for the activity items */
+        .activity-item {
+            transition: background-color 0.2s;
+        }
+
+        .activity-item:hover {
+            background-color: #f3f4f6;
+        }
+
+        input[type="checkbox"]:checked+label {
+            color: #4f46e5;
+            font-weight: 600;
+        }
+
+        .count-input {
+            transition: all 0.2s;
+        }
+
+        .count-input:focus {
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+    <!-- Top navigation bar -->
+    <nav class="bg-indigo-600 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-edit text-2xl mr-3"></i>
+                    <span class="font-bold text-xl">Edit Faculty Report</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/admin" class="flex items-center text-indigo-100 hover:text-white">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        <span>Back to Dashboard</span>
+                    </a>
+                    <a href="/admin/logout" class="flex items-center text-indigo-100 hover:text-white">
+                        <span class="mr-2">Logout</span>
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page header -->
+        <div class="bg-white shadow rounded-lg mb-6 p-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Edit Report</h1>
+                    <p class="text-gray-600 mt-1">Update the report details below</p>
+                </div>
+                <div class="mt-4 md:mt-0">
+                    <span
+                        class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z">
+                            </path>
+                        </svg>
+                        Report ID: <%= report.id %>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <% if (locals.error) { %>
+            <div class="mb-6 p-4 rounded bg-red-100 text-red-800 border-l-4 border-red-600">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    <span>
+                        <%= error %>
+                    </span>
+                </div>
+            </div>
+            <% } %>
+
+
+
+                <!-- Edit form -->
+                <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-100">
+                    <div class="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b border-gray-100">
+                        <h2 class="text-lg font-medium text-gray-800">Report Information</h2>
+                    </div>
+                    <form method="POST" action="/admin/edit/<%= report.id %>" class="p-6 space-y-6">
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <!-- UID -->
+                            <div>
+                                <label for="uid" class="primary-label">Faculty ID</label>
+                                <input type="text" id="uid" name="uid" required
+                                    class="w-full primary-input rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                    value="<%= report.uid %>">
+                            </div>
+
+                            <!-- Name -->
+                            <div>
+                                <label for="name" class="primary-label">Faculty Name</label>
+                                <input type="text" id="name" name="name" required
+                                    class="w-full primary-input rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                    value="<%= report.name %>">
+                            </div>
+
+                            <!-- Team -->
+                            <div>
+                                <label for="team" class="primary-label">Team</label>
+                                <select id="team" name="team" required
+                                    class="w-full primary-input rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="Secrecy Cell" <%=report.team==='Secrecy Cell' ? 'selected' : '' %>
+                                        >Secrecy Cell</option>
+                                    <option value="Generation & Vetting" <%=report.team==='Generation & Vetting'
+                                        ? 'selected' : '' %>>Generation & Vetting</option>
+                                    <option value="Translation" <%=report.team==='Translation' ? 'selected' : '' %>
+                                        >Translation</option>
+                                    <option value="Editing" <%=report.team==='Editing' ? 'selected' : '' %>>Editing
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Report Date -->
+                            <div>
+                                <label for="report_date" class="primary-label">Report Date</label>
+                                <input type="date" id="report_date" name="report_date" required
+                                    class="w-full primary-input rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                    value="<%= report.report_date %>">
+                            </div>
+                        </div>
+
+                        <!-- Activities Section -->
+                        <div class="mt-6">
+                            <h3 class="text-lg font-medium text-gray-900">Activities</h3>
+                            <p class="text-sm text-gray-500 mb-4">Select the activities performed and provide
+                                count/hours</p>
+
+                            <div class="space-y-4 mt-4">
+                                <!-- Team tabs -->
+                                <div class="flex border-b border-gray-200 mb-4">
+                                    <button type="button"
+                                        class="py-2 px-8 text-sm font-medium border-b-2 border-indigo-500 text-indigo-600 team-tab"
+                                        data-team="Secrecy">Secrecy Cell</button>
+                                    <button type="button"
+                                        class="py-2 px-8 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 team-tab"
+                                        data-team="Generation">Generation & Vetting</button>
+                                    <button type="button"
+                                        class="py-2 px-8 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 team-tab"
+                                        data-team="Translation">Translation</button>
+                                    <button type="button"
+                                        class="py-2 px-8 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 team-tab"
+                                        data-team="Editing">Editing</button>
+                                </div>
+
+                                <!-- Secrecy Cell Activities -->
+                                <div id="Secrecy-activities" class="team-activities">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <% secrecyActivities.forEach(activity=> { %>
+                                            <div
+                                                class="flex items-center space-x-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-md">
+                                                <input id="secrecy-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
+                                                    name="activities" type="checkbox" value="<%= activity %>"
+                                                    <%=report.activities.some(a=> a.name === activity) ? 'checked' : ''
+                                                %>
+                                                class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                                                <label for="secrecy-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
+                                                    class="flex-1 text-sm font-medium text-gray-700">
+                                                    <%= activity %>
+                                                </label>
+                                                <div class="w-32">
+                                                    <input type="number" name="counts[<%= activity %>]" min="0"
+                                                        placeholder="Count/Hours"
+                                                        value="<%= report.activities.find(a => a.name === activity)?.count || '' %>"
+                                                        class="w-full py-1 px-2 text-sm border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                </div>
+                                            </div>
+                                            <% }) %>
+                                    </div>
+                                </div>
+
+                                <!-- Generation & Vetting Activities -->
+                                <div id="Generation-activities" class="team-activities hidden">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <% generationActivities.forEach(activity=> { %>
+                                            <div
+                                                class="flex items-center space-x-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-md">
+                                                <input
+                                                    id="generation-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
+                                                    name="activities" type="checkbox" value="<%= activity %>"
+                                                    <%=report.activities.some(a=> a.name === activity) ? 'checked' : ''
+                                                %>
+                                                class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                                                <label
+                                                    for="generation-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
+                                                    class="flex-1 text-sm font-medium text-gray-700">
+                                                    <%= activity %>
+                                                </label>
+                                                <div class="w-32">
+                                                    <input type="number" name="counts[<%= activity %>]" min="0"
+                                                        placeholder="Count/Hours"
+                                                        value="<%= report.activities.find(a => a.name === activity)?.count || '' %>"
+                                                        class="w-full py-1 px-2 text-sm border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                </div>
+                                            </div>
+                                            <% }) %>
+                                    </div>
+                                </div>
+
+                                <!-- Translation Activities -->
+                                <div id="Translation-activities" class="team-activities hidden">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <% translationActivities.forEach(activity=> { %>
+                                            <div
+                                                class="flex items-center space-x-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-md">
+                                                <input
+                                                    id="translation-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
+                                                    name="activities" type="checkbox" value="<%= activity %>"
+                                                    <%=report.activities.some(a=> a.name === activity) ? 'checked' : ''
+                                                %>
+                                                class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                                                <label
+                                                    for="translation-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
+                                                    class="flex-1 text-sm font-medium text-gray-700">
+                                                    <%= activity %>
+                                                </label>
+                                                <div class="w-32">
+                                                    <input type="number" name="counts[<%= activity %>]" min="0"
+                                                        placeholder="Count/Hours"
+                                                        value="<%= report.activities.find(a => a.name === activity)?.count || '' %>"
+                                                        class="w-full py-1 px-2 text-sm border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                </div>
+                                            </div>
+                                            <% }) %>
+                                    </div>
+                                </div>
+
+                                <!-- Editing Activities -->
+                                <div id="Editing-activities" class="team-activities hidden">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <% editingActivities.forEach(activity=> { %>
+                                            <div
+                                                class="flex items-center space-x-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-md">
+                                                <input id="editing-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
+                                                    name="activities" type="checkbox" value="<%= activity %>"
+                                                    <%=report.activities.some(a=> a.name === activity) ? 'checked' : ''
+                                                %>
+                                                class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                                                <label for="editing-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
+                                                    class="flex-1 text-sm font-medium text-gray-700">
+                                                    <%= activity %>
+                                                </label>
+                                                <div class="w-32">
+                                                    <input type="number" name="counts[<%= activity %>]" min="0"
+                                                        placeholder="Count/Hours"
+                                                        value="<%= report.activities.find(a => a.name === activity)?.count || '' %>"
+                                                        class="w-full py-1 px-2 text-sm border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                </div>
+                                            </div>
+                                            <% }) %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-5 flex justify-between border-t border-gray-200 mt-8">
+                            <a href="/admin"
+                                class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md transition-colors shadow-sm">
+                                <i class="fas fa-arrow-left mr-2"></i> Cancel
+                            </a>
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors shadow-sm">
+                                <i class="fas fa-save mr-2"></i> Update Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-4 mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-gray-500 text-sm">
+                &copy; <%= new Date().getFullYear() %> Faculty Daily Reporter | Admin Dashboard
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Get the team from the select dropdown
+            const reportTeam = document.getElementById('team').value;
+
+            // Map the team value to the tab
+            let activeTeam = 'Secrecy'; // Default
+            if (reportTeam === 'Secrecy Cell') {
+                activeTeam = 'Secrecy';
+            } else if (reportTeam === 'Generation & Vetting') {
+                activeTeam = 'Generation';
+            } else if (reportTeam === 'Translation') {
+                activeTeam = 'Translation';
+            } else if (reportTeam === 'Editing') {
+                activeTeam = 'Editing';
+            }
+
+            // Show the tab content for the team on page load
+            setActiveTeam(activeTeam);
+
+            // Listen for changes to the team dropdown
+            document.getElementById('team').addEventListener('change', function () {
+                const selectedTeam = this.value;
+                let tabTeam = 'Secrecy';
+
+                // Map the selected team to the appropriate tab
+                if (selectedTeam === 'Secrecy Cell') {
+                    tabTeam = 'Secrecy';
+                } else if (selectedTeam === 'Generation & Vetting') {
+                    tabTeam = 'Generation';
+                } else if (selectedTeam === 'Translation') {
+                    tabTeam = 'Translation';
+                } else if (selectedTeam === 'Editing') {
+                    tabTeam = 'Editing';
+                }
+
+                setActiveTeam(tabTeam);
+            });
+
+            // Team tab switching
+            const teamTabs = document.querySelectorAll('.team-tab');
+            teamTabs.forEach(tab => {
+                tab.addEventListener('click', function (e) {
+                    e.preventDefault(); // Prevent form submission
+                    const team = this.getAttribute('data-team');
+
+                    // Update the team dropdown based on which tab was clicked
+                    const selectElement = document.getElementById('team');
+                    if (team === 'Secrecy') {
+                        selectElement.value = 'Secrecy Cell';
+                    } else if (team === 'Generation') {
+                        selectElement.value = 'Generation & Vetting';
+                    } else if (team === 'Translation') {
+                        selectElement.value = 'Translation';
+                    } else if (team === 'Editing') {
+                        selectElement.value = 'Editing';
+                    }
+
+                    setActiveTeam(team);
+                });
+            });
+
+            function setActiveTeam(team) {
+                console.log('Setting active team:', team);
+
+                // Update tab styles
+                document.querySelectorAll('.team-tab').forEach(tab => {
+                    const tabTeam = tab.getAttribute('data-team');
+                    if (tabTeam === team) {
+                        tab.classList.add('border-indigo-500', 'text-indigo-600');
+                        tab.classList.remove('border-transparent', 'text-gray-500');
+                    } else {
+                        tab.classList.remove('border-indigo-500', 'text-indigo-600');
+                        tab.classList.add('border-transparent', 'text-gray-500');
+                    }
+                });
+
+                // Show/hide activities
+                document.querySelectorAll('.team-activities').forEach(div => {
+                    div.classList.add('hidden');
+                });
+                document.getElementById(`${team}-activities`).classList.remove('hidden');
+            }
+        });
+    </script>
+
+</body>
+
+</html>

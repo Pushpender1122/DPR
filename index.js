@@ -233,7 +233,40 @@ function requireAdmin(req, res, next) {
 
 // Admin dashboard - protected by authentication
 app.get('/admin', requireAdmin, (req, res) => {
-    db.all(`SELECT * FROM reports ORDER BY report_date DESC, submitted_at DESC`, (err, rows) => {
+    // Get filter parameters
+    const { date, name, uid, error, success } = req.query;
+
+    // Base query
+    let query = `SELECT * FROM reports`;
+    const params = [];
+    const conditions = [];
+
+    // Add filter conditions if provided
+    if (date) {
+        conditions.push(`report_date = ?`);
+        params.push(date);
+    }
+
+    if (name) {
+        conditions.push(`name LIKE ?`);
+        params.push(`%${name}%`);
+    }
+
+    if (uid) {
+        conditions.push(`uid LIKE ?`);
+        params.push(`%${uid}%`);
+    }
+
+    // Combine conditions if any
+    if (conditions.length > 0) {
+        query += ` WHERE ${conditions.join(' AND ')}`;
+    }
+
+    // Add sorting
+    query += ` ORDER BY report_date DESC, submitted_at DESC`;
+
+    // Execute the query
+    db.all(query, params, (err, rows) => {
         if (err) {
             return res.render('admin', { error: 'Database error', reports: [] });
         }
@@ -243,7 +276,15 @@ app.get('/admin', requireAdmin, (req, res) => {
             activities: JSON.parse(row.activities)
         }));
 
-        res.render('admin', { reports });
+        // Pass filters back to the template for displaying current filters
+        const filters = { date, name, uid };
+        // Pass any error or success messages from query params
+        res.render('admin', {
+            reports,
+            filters,
+            error: error || null,
+            success: success || null
+        });
     });
 });
 
@@ -252,6 +293,142 @@ app.get('/export-to-sheets', requireAdmin, (req, res) => {
     // This would normally integrate with Google Sheets API
     // For now, redirect to a Google Sheet template with instructions
     res.redirect('https://docs.google.com/spreadsheets/create');
+});
+
+// Admin edit report form - protected by authentication
+app.get('/admin/edit/:id', requireAdmin, (req, res) => {
+    const reportId = req.params.id;
+
+    db.get(`SELECT * FROM reports WHERE id = ?`, [reportId], (err, row) => {
+        if (err) {
+            console.error('Database error when fetching report:', err);
+            return res.redirect('/admin?error=' + encodeURIComponent('Database error: ' + err.message));
+        }
+
+        if (!row) {
+            console.error('Report not found with ID:', reportId);
+            return res.redirect('/admin?error=Report+not+found');
+        }
+
+        // Parse activities
+        let reportActivities = [];
+        try {
+            reportActivities = JSON.parse(row.activities);
+            console.log('Parsed activities:', reportActivities);
+        } catch (e) {
+            console.error('Error parsing activities JSON:', e);
+            reportActivities = [];
+        }
+
+        const report = {
+            ...row,
+            activities: reportActivities
+        };
+
+        // Get the list of all activities for each team
+        const secrecyActivities = [
+            "Handling Queries from DSR and Front Office",
+            "Resolving of student Queries",
+            "Scrutiny",
+            "Calling and Follow up",
+            "Re-evaluation",
+            "Rectification/Proration of Marks",
+            "Academic Benefit",
+            "Confidential Result Declaration",
+            "Question Bank",
+            "Data Entry of marks",
+            "Duty leave",
+            "Staff Indisciplinary",
+            "Coordination in External Re-evaluation",
+            "Coordination in External Question Paper",
+            "Reports/Record maintenance/Data Analysis",
+            "Email Handling",
+            "Digitalization of Record",
+            "Co-ordination"
+        ];
+
+        const generationActivities = [
+            "Generation of Question Paper",
+            "Email handling",
+            "Resolving of faculty Queries/ Calling(telephonic and visitors)",
+            "RMS Handling",
+            "Vetting-faculty dealing",
+            "Vetting - Calling",
+            "Envelope preparation(For vetting )",
+            "Sorting and pending status updation",
+            "Reports / Record maintenance",
+            "Closer report",
+            "Final Question paper verification",
+            "Final Question paper uploading for Evalution/DE"
+        ];
+
+        const translationActivities = [
+            "Translation",
+            "Printing / downloading",
+            "answer key sorting /set making/ stapling / pasting of stickers / seating plan etc",
+            "Stamping of brown envelopes",
+            "Packing",
+            "Verification & sorting of pakets / answer key",
+            "Answer key -(Manual)",
+            "Answer key - (Online )",
+            "Reports/Record maintenance",
+            "Shredding of confidential documents",
+            "Dispatch QP/OMR"
+        ];
+
+        const editingActivities = [
+            "Editing",
+            "Question bank entry on MyClass",
+            "Proof reading",
+            "Final question paper uploading for Evaulation/DE",
+            "Reports/Record maintenance",
+            "Segregation of QP"
+        ];
+
+        res.render('edit-report', {
+            report,
+            secrecyActivities,
+            generationActivities,
+            translationActivities,
+            editingActivities
+        });
+    });
+});// Admin update report - protected by authentication
+app.post('/admin/edit/:id', requireAdmin, (req, res) => {
+    const reportId = req.params.id;
+    const { uid, name, team, report_date, activities } = req.body;
+
+    // Format activities similar to the submit route
+    let formattedActivities = [];
+
+    // Check if activities is an array (multiple activities selected)
+    if (Array.isArray(activities)) {
+        const counts = req.body.counts || {};
+        formattedActivities = activities.map(activity => ({
+            name: activity,
+            count: counts[activity] || ''
+        }));
+    } else if (activities) {
+        // Single activity
+        formattedActivities = [{
+            name: activities,
+            count: req.body.counts ? req.body.counts[activities] || '' : ''
+        }];
+    }
+
+    // Update the record
+    const stmt = db.prepare(`UPDATE reports SET uid=?, name=?, team=?, activities=?, report_date=? WHERE id=?`);
+    stmt.run(uid, name, team, JSON.stringify(formattedActivities), report_date, reportId, function (err) {
+        if (err) {
+            console.error('DB update error', err);
+            return res.redirect(`/admin/edit/${reportId}?error=${encodeURIComponent('Database error: ' + err.message)}`);
+        }
+
+        // Regenerate the Excel file to reflect the changes
+        generateExcelFromDatabase().catch(e => console.warn('Excel regeneration failed', e.message));
+
+        return res.redirect('/admin?success=Report+updated+successfully');
+    });
 });
 
 // Generate Excel file from database
