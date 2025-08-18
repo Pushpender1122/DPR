@@ -5,13 +5,29 @@ const sqlite3 = require('sqlite3').verbose();
 const ExcelJS = require('exceljs');
 const fs = require('fs');
 const path = require('path');
+const session = require('express-session');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Admin credentials - hardcoded for now
+const ADMIN_USERNAME = 'admin';
+const ADMIN_PASSWORD = 'admin';
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Set up session middleware
+app.use(session({
+    secret: 'faculty-reporter-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: false, // set to true if using HTTPS
+        maxAge: 3600000 // 1 hour
+    }
+}));
 
 // Set up EJS as the view engine
 app.set('view engine', 'ejs');
@@ -180,8 +196,43 @@ app.post('/submit', async (req, res) => {
     }
 });
 
-// Admin dashboard
-app.get('/admin', (req, res) => {
+// Admin login page
+app.get('/admin/login', (req, res) => {
+    if (req.session.isAdmin) {
+        return res.redirect('/admin');
+    }
+    res.render('login');
+});
+
+// Admin login submission
+app.post('/admin/login', (req, res) => {
+    const { username, password } = req.body;
+
+    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+        req.session.isAdmin = true;
+        return res.redirect('/admin');
+    } else {
+        return res.render('login', { error: 'Invalid username or password' });
+    }
+});
+
+// Admin logout
+app.get('/admin/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/admin/login');
+});
+
+// Middleware to check if user is admin
+function requireAdmin(req, res, next) {
+    if (req.session.isAdmin) {
+        next();
+    } else {
+        res.redirect('/admin/login');
+    }
+}
+
+// Admin dashboard - protected by authentication
+app.get('/admin', requireAdmin, (req, res) => {
     db.all(`SELECT * FROM reports ORDER BY report_date DESC, submitted_at DESC`, (err, rows) => {
         if (err) {
             return res.render('admin', { error: 'Database error', reports: [] });
@@ -196,8 +247,8 @@ app.get('/admin', (req, res) => {
     });
 });
 
-// Export to Google Sheets
-app.get('/export-to-sheets', (req, res) => {
+// Export to Google Sheets - protected by authentication
+app.get('/export-to-sheets', requireAdmin, (req, res) => {
     // This would normally integrate with Google Sheets API
     // For now, redirect to a Google Sheet template with instructions
     res.redirect('https://docs.google.com/spreadsheets/create');
@@ -286,8 +337,8 @@ async function generateExcelFromDatabase() {
     });
 }
 
-// Download excel file
-app.get('/export', async (req, res) => {
+// Download excel file - protected by authentication
+app.get('/export', requireAdmin, async (req, res) => {
     try {
         if (!fs.existsSync(EXCEL_FILE)) {
             // If the Excel file doesn't exist, generate it from the database

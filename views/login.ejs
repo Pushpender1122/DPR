@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Login | Faculty Reports</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-6">
+    <div class="w-full max-w-md">
+        <div class="bg-white shadow-xl rounded-xl overflow-hidden">
+            <div class="bg-indigo-600 p-6 text-white text-center">
+                <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+                <p class="text-indigo-200 mt-1">Faculty Daily Reports</p>
+            </div>
+
+            <div class="p-8">
+                <% if (locals.error) { %>
+                    <div class="mb-6 p-4 rounded bg-red-100 text-red-800 border-l-4 border-red-600">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-circle mr-2"></i>
+                            <span>
+                                <%= error %>
+                            </span>
+                        </div>
+                    </div>
+                    <% } %>
+
+                        <form method="POST" action="/admin/login" class="space-y-6">
+                            <div>
+                                <label for="username"
+                                    class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-user text-gray-400"></i>
+                                    </div>
+                                    <input id="username" name="username" type="text" required
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 p-3"
+                                        placeholder="Enter your username">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="password"
+                                    class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-lock text-gray-400"></i>
+                                    </div>
+                                    <input id="password" name="password" type="password" required
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 p-3"
+                                        placeholder="Enter your password">
+                                </div>
+                            </div>
+
+                            <button type="submit"
+                                class="w-full flex justify-center items-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg p-3 transition">
+                                <i class="fas fa-sign-in-alt mr-2"></i>
+                                Login to Dashboard
+                            </button>
+                        </form>
+
+                        <div class="mt-8 text-center">
+                            <a href="/"
+                                class="text-sm text-indigo-600 hover:text-indigo-800 flex justify-center items-center">
+                                <i class="fas fa-arrow-left mr-1"></i> Back to Reporting Form
+                            </a>
+                        </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
