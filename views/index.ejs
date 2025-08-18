@@ -12,111 +12,141 @@
     <div class="w-full max-w-2xl bg-white rounded-2xl shadow p-8">
         <h1 class="text-2xl font-bold mb-4">Faculty Daily Reporter</h1>
 
-        <div id="alert" class="hidden mb-4 p-3 rounded"></div>
-
-        <form id="reportForm" class="space-y-4" method="POST" action="/submit">
-            <div class="grid grid-cols-2 gap-4">
-                <input id="uid" name="uid" class="border p-2 rounded" placeholder="UID" required />
-                <input id="name" name="name" class="border p-2 rounded" placeholder="Full name" required />
+        <% if (locals.error) { %>
+            <div class="mb-4 p-3 rounded bg-red-100 text-red-800">
+                <%= error %>
             </div>
+            <% } %>
 
-            <div class="grid grid-cols-2 gap-4">
-                <select id="team" name="team" class="border p-2 rounded" required onchange="showActivitiesForTeam()">
-                    <option value="">Select team</option>
-                    <option>Editing & Final Checking</option>
-                    <option>Translation, Printing & Packing</option>
-                    <option>Secrecy Cell</option>
-                    <option>Generation & Vetting</option>
-                </select>
-
-                <input id="report_date" name="report_date" type="date" class="border p-2 rounded" required
-                    value="<%= new Date().toISOString().split('T')[0] %>" readonly />
-            </div>
-
-            <div>
-                <label class="block font-medium mb-2">Activities (check multiple)</label>
-                <div id="activitiesContainer" class="space-y-2">
-                    <div id="secrecyActivities" class="hidden">
-                        <% const secrecyActivities=[ "Handling Queries from DSR and Front Office"
-                            , "Resolving of student Queries" , "Scrutiny" , "Calling and Follow up" , "Re-evaluation"
-                            , "Rectification/Proration of Marks" , "Academic Benefit"
-                            , "Confidential Result Declaration" , "Question Bank" , "Data Entry of marks" , "Duty leave"
-                            , "Staff Indisciplinary" , "Coordination in External Re-evaluation"
-                            , "Coordination in External Question Paper" , "Reports/Record maintenance/Data Analysis"
-                            , "Email Handling" , "Digitalization of Record" , "Co-ordination" ]; %>
-                            <% secrecyActivities.forEach(activity=> { %>
-                                <div class="flex items-center">
-                                    <input type="checkbox" name="activities[]" value="<%= activity %>"
-                                        id="<%= activity.replace(/\s+/g, '_') %>" class="mr-2">
-                                    <label for="<%= activity.replace(/\s+/g, '_') %>">
-                                        <%= activity %>
-                                    </label>
-                                </div>
-                                <% }); %>
+                <% if (locals.success) { %>
+                    <div class="mb-4 p-3 rounded bg-green-100 text-green-800">
+                        <%= success %>
                     </div>
+                    <% } %>
 
-                    <div id="generationActivities" class="hidden">
-                        <% const generationActivities=[ "Generation of Question Paper" , "Email handling"
-                            , "Resolving of faculty Queries/ Calling(telephonic and visitors)" , "RMS Handling"
-                            , "Vetting-faculty dealing" , "Vetting - Calling" , "Envelope preparation(For vetting )"
-                            , "Sorting and pending status updation" , "Reports / Record maintenance" , "Closer report"
-                            , "Final Question paper verification" , "Final Question paper uploading for Evalution/DE" ];
-                            %>
-                            <% generationActivities.forEach(activity=> { %>
-                                <div class="flex items-center">
-                                    <input type="checkbox" name="activities[]" value="<%= activity %>"
-                                        id="<%= activity.replace(/\s+/g, '_') %>" class="mr-2">
-                                    <label for="<%= activity.replace(/\s+/g, '_') %>">
-                                        <%= activity %>
-                                    </label>
+                        <div id="alert" class="hidden mb-4 p-3 rounded"></div>
+
+                        <form id="reportForm" class="space-y-4" method="POST" action="/submit">
+                            <div class="grid grid-cols-2 gap-4">
+                                <input id="uid" name="uid" class="border p-2 rounded" placeholder="UID" required />
+                                <input id="name" name="name" class="border p-2 rounded" placeholder="Full name"
+                                    required />
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-4">
+                                <input id="report_date" name="report_date" type="date" class="border p-2 rounded"
+                                    required value="<%= new Date().toISOString().split('T')[0] %>" readonly />
+                                <input type="hidden" id="team" name="team" value="Multiple Teams">
+                            </div>
+
+                            <div>
+                                <label class="block font-medium mb-2">Select Activities from Teams</label>
+
+                                <div class="mb-4">
+                                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                                        <button type="button" id="showSecrecy" data-active="false"
+                                            class="px-3 py-1 bg-blue-100 hover:bg-blue-200 rounded transition-colors">Secrecy
+                                            Cell</button>
+                                        <button type="button" id="showGeneration" data-active="false"
+                                            class="px-3 py-1 bg-blue-100 hover:bg-blue-200 rounded transition-colors">Generation
+                                            &
+                                            Vetting</button>
+                                        <button type="button" id="showTranslation" data-active="false"
+                                            class="px-3 py-1 bg-blue-100 hover:bg-blue-200 rounded transition-colors">Translation</button>
+                                        <button type="button" id="showEditing" data-active="false"
+                                            class="px-3 py-1 bg-blue-100 hover:bg-blue-200 rounded transition-colors">Editing</button>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Click buttons to show/hide activities from
+                                        different teams</p>
                                 </div>
-                                <% }); %>
-                    </div>
 
-                    <div id="translationActivities" class="hidden">
-                        <% const translationActivities=[ "Translation" , "Printing / downloading"
-                            , "answer key sorting /set making/ stapling / pasting of stickers / seating plan etc"
-                            , "Stamping of brown envelopes" , "Packing"
-                            , "Verification & sorting of pakets / answer key" , "Answer key -(Manual)"
-                            , "Answer key - (Online )" , "Reports/Record maintenance"
-                            , "Shredding of confidential documents" , "Dispatch QP/OMR" ]; %>
-                            <% translationActivities.forEach(activity=> { %>
-                                <div class="flex items-center">
-                                    <input type="checkbox" name="activities[]" value="<%= activity %>"
-                                        id="<%= activity.replace(/\s+/g, '_') %>" class="mr-2">
-                                    <label for="<%= activity.replace(/\s+/g, '_') %>">
-                                        <%= activity %>
-                                    </label>
+                                <div id="activitiesContainer" class="space-y-4 border p-4 rounded">
+                                    <div id="secrecyActivities" class="hidden">
+                                        <% const secrecyActivities=[ "Handling Queries from DSR and Front Office"
+                                            , "Resolving of student Queries" , "Scrutiny" , "Calling and Follow up"
+                                            , "Re-evaluation" , "Rectification/Proration of Marks" , "Academic Benefit"
+                                            , "Confidential Result Declaration" , "Question Bank"
+                                            , "Data Entry of marks" , "Duty leave" , "Staff Indisciplinary"
+                                            , "Coordination in External Re-evaluation"
+                                            , "Coordination in External Question Paper"
+                                            , "Reports/Record maintenance/Data Analysis" , "Email Handling"
+                                            , "Digitalization of Record" , "Co-ordination" ]; %>
+                                            <% secrecyActivities.forEach(activity=> { %>
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" name="activities[]" value="<%= activity %>"
+                                                        id="<%= activity.replace(/\s+/g, '_') %>" class="mr-2">
+                                                    <label for="<%= activity.replace(/\s+/g, '_') %>">
+                                                        <%= activity %>
+                                                    </label>
+                                                </div>
+                                                <% }); %>
+                                    </div>
+
+                                    <div id="generationActivities" class="hidden">
+                                        <% const generationActivities=[ "Generation of Question Paper"
+                                            , "Email handling"
+                                            , "Resolving of faculty Queries/ Calling(telephonic and visitors)"
+                                            , "RMS Handling" , "Vetting-faculty dealing" , "Vetting - Calling"
+                                            , "Envelope preparation(For vetting )"
+                                            , "Sorting and pending status updation" , "Reports / Record maintenance"
+                                            , "Closer report" , "Final Question paper verification"
+                                            , "Final Question paper uploading for Evalution/DE" ]; %>
+                                            <% generationActivities.forEach(activity=> { %>
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" name="activities[]" value="<%= activity %>"
+                                                        id="<%= activity.replace(/\s+/g, '_') %>" class="mr-2">
+                                                    <label for="<%= activity.replace(/\s+/g, '_') %>">
+                                                        <%= activity %>
+                                                    </label>
+                                                </div>
+                                                <% }); %>
+                                    </div>
+
+                                    <div id="translationActivities" class="hidden">
+                                        <% const translationActivities=[ "Translation" , "Printing / downloading"
+                                            , "answer key sorting /set making/ stapling / pasting of stickers / seating plan etc"
+                                            , "Stamping of brown envelopes" , "Packing"
+                                            , "Verification & sorting of pakets / answer key" , "Answer key -(Manual)"
+                                            , "Answer key - (Online )" , "Reports/Record maintenance"
+                                            , "Shredding of confidential documents" , "Dispatch QP/OMR" ]; %>
+                                            <% translationActivities.forEach(activity=> { %>
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" name="activities[]" value="<%= activity %>"
+                                                        id="<%= activity.replace(/\s+/g, '_') %>" class="mr-2">
+                                                    <label for="<%= activity.replace(/\s+/g, '_') %>">
+                                                        <%= activity %>
+                                                    </label>
+                                                </div>
+                                                <% }); %>
+                                    </div>
+
+                                    <div id="editingActivities" class="hidden">
+                                        <% const editingActivities=[ "Editing" , "Question bank entry on MyClass"
+                                            , "Proof reading" , "Final question paper uploading for Evaulation/DE"
+                                            , "Reports/Record maintenance" , "Segregation of QP" ]; %>
+                                            <% editingActivities.forEach(activity=> { %>
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" name="activities[]" value="<%= activity %>"
+                                                        id="<%= activity.replace(/\s+/g, '_') %>" class="mr-2">
+                                                    <label for="<%= activity.replace(/\s+/g, '_') %>">
+                                                        <%= activity %>
+                                                    </label>
+                                                </div>
+                                                <% }); %>
+                                    </div>
                                 </div>
-                                <% }); %>
-                    </div>
 
-                    <div id="editingActivities" class="hidden">
-                        <% const editingActivities=[ "Editing" , "Question bank entry on MyClass" , "Proof reading"
-                            , "Final question paper uploading for Evaulation/DE" , "Reports/Record maintenance"
-                            , "Segregation of QP" ]; %>
-                            <% editingActivities.forEach(activity=> { %>
-                                <div class="flex items-center">
-                                    <input type="checkbox" name="activities[]" value="<%= activity %>"
-                                        id="<%= activity.replace(/\s+/g, '_') %>" class="mr-2">
-                                    <label for="<%= activity.replace(/\s+/g, '_') %>">
-                                        <%= activity %>
-                                    </label>
+                                <div id="countInputs" class="mt-4 space-y-2 hidden">
+                                    <h3 class="font-medium">Enter count/hours for selected activities:</h3>
+                                    <div id="countInputsContainer"></div>
                                 </div>
-                                <% }); %>
-                    </div>
-                </div>
+                            </div>
 
-                <div id="countInputs" class="mt-4 space-y-2 hidden">
-                    <h3 class="font-medium">Enter count/hours for selected activities:</h3>
-                    <div id="countInputsContainer"></div>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-3">
-                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Submit Report</button>
-            </div>
-        </form>
+                            <div class="flex items-center gap-3">
+                                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Submit
+                                    Report</button>
+                            </div>
+                        </form>
     </div>
 
     <script>
@@ -132,24 +162,39 @@
             setTimeout(() => alertBox.classList.add('hidden'), 5000);
         }
 
-        function showActivitiesForTeam() {
-            const team = document.getElementById('team').value;
+        // Toggle activity sections
+        document.getElementById('showSecrecy').addEventListener('click', function () {
+            toggleSection('secrecyActivities', this);
+        });
 
-            // Hide all activity sections first
-            document.getElementById('secrecyActivities').classList.add('hidden');
-            document.getElementById('generationActivities').classList.add('hidden');
-            document.getElementById('translationActivities').classList.add('hidden');
-            document.getElementById('editingActivities').classList.add('hidden');
+        document.getElementById('showGeneration').addEventListener('click', function () {
+            toggleSection('generationActivities', this);
+        });
 
-            // Show the appropriate section based on team selection
-            if (team === 'Secrecy Cell') {
-                document.getElementById('secrecyActivities').classList.remove('hidden');
-            } else if (team === 'Generation & Vetting') {
-                document.getElementById('generationActivities').classList.remove('hidden');
-            } else if (team === 'Translation, Printing & Packing') {
-                document.getElementById('translationActivities').classList.remove('hidden');
-            } else if (team === 'Editing & Final Checking') {
-                document.getElementById('editingActivities').classList.remove('hidden');
+        document.getElementById('showTranslation').addEventListener('click', function () {
+            toggleSection('translationActivities', this);
+        });
+
+        document.getElementById('showEditing').addEventListener('click', function () {
+            toggleSection('editingActivities', this);
+        });
+
+        function toggleSection(sectionId, button) {
+            const section = document.getElementById(sectionId);
+            const isActive = button.getAttribute('data-active') === 'true';
+
+            if (isActive) {
+                // If already active, deactivate
+                button.setAttribute('data-active', 'false');
+                button.classList.remove('bg-blue-500', 'text-white');
+                button.classList.add('bg-blue-100');
+                section.classList.add('hidden');
+            } else {
+                // If not active, activate
+                button.setAttribute('data-active', 'true');
+                button.classList.remove('bg-blue-100');
+                button.classList.add('bg-blue-500', 'text-white');
+                section.classList.remove('hidden');
             }
         }
 
@@ -195,7 +240,39 @@
             if (checkedActivities.length === 0) {
                 e.preventDefault();
                 showAlert('Please select at least one activity', 'error');
+                return;
             }
+
+            // Set the team value based on which sections are active
+            const teams = [];
+            if (document.getElementById('showSecrecy').getAttribute('data-active') === 'true') {
+                teams.push('Secrecy Cell');
+            }
+            if (document.getElementById('showGeneration').getAttribute('data-active') === 'true') {
+                teams.push('Generation & Vetting');
+            }
+            if (document.getElementById('showTranslation').getAttribute('data-active') === 'true') {
+                teams.push('Translation, Printing & Packing');
+            }
+            if (document.getElementById('showEditing').getAttribute('data-active') === 'true') {
+                teams.push('Editing & Final Checking');
+            }
+
+            if (teams.length === 0) {
+                e.preventDefault();
+                showAlert('Please select at least one team', 'error');
+                return;
+            }
+
+            document.getElementById('team').value = teams.join(', ');
+        });
+
+        // Hide all activity sections initially
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('secrecyActivities').classList.add('hidden');
+            document.getElementById('generationActivities').classList.add('hidden');
+            document.getElementById('translationActivities').classList.add('hidden');
+            document.getElementById('editingActivities').classList.add('hidden');
         });
     </script>
 </body>

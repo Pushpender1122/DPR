@@ -53,10 +53,68 @@ async function appendToExcel(row) {
     }
 
     const sheet = workbook.getWorksheet('Reports');
+
+    // Initialize the sheet with headers if it's empty
     if (sheet.rowCount === 0) {
-        sheet.addRow(['UID', 'Name', 'Team', 'Activities (JSON)', 'Report Date', 'Submitted At']);
+        sheet.addRow(['UID', 'Name', 'Team', 'Report Date', 'Activity', 'Count/Hours', 'Submitted At']);
+
+        // Format header row
+        const headerRow = sheet.getRow(1);
+        headerRow.font = { bold: true };
+        headerRow.eachCell(cell => {
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFE0E0E0' }
+            };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
     }
-    sheet.addRow([row.uid, row.name, row.team, JSON.stringify(row.activities), row.report_date, row.submitted_at]);
+
+    // Add each activity as a separate row for better analysis
+    for (const activity of row.activities) {
+        sheet.addRow([
+            row.uid,
+            row.name,
+            row.team,
+            row.report_date,
+            activity.name,
+            activity.count,
+            row.submitted_at
+        ]);
+    }
+
+    // Auto-filter for all columns to make analysis easier
+    sheet.autoFilter = {
+        from: { row: 1, column: 1 },
+        to: { row: 1, column: 7 }
+    };
+
+    // Make all columns wider for better visibility
+    sheet.columns.forEach(column => {
+        column.width = 20;
+    });
+
+    // Add conditional formatting for better readability
+    for (let i = 2; i <= sheet.rowCount; i++) {
+        const row = sheet.getRow(i);
+        // Alternate row colors for readability
+        if (i % 2 === 0) {
+            row.eachCell(cell => {
+                cell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FFFAFAFA' }
+                };
+            });
+        }
+    }
+
     await workbook.xlsx.writeFile(EXCEL_FILE);
 }
 
@@ -74,39 +132,51 @@ app.post('/submit', async (req, res) => {
             return res.render('index', { error: 'Missing required fields' });
         }
 
-        // Format activities with counts
-        const formattedActivities = Array.isArray(activities)
-            ? activities.map(activity => ({
-                name: activity,
-                count: counts[activity] || ''
-            }))
-            : [{ name: activities, count: counts[activities] || '' }];
-
-        const submitted_at = new Date().toISOString();
-
-        const stmt = db.prepare(`INSERT OR IGNORE INTO reports (uid, name, team, activities, report_date, submitted_at) VALUES (?, ?, ?, ?, ?, ?)`);
-        stmt.run(uid, name, team, JSON.stringify(formattedActivities), report_date, submitted_at, async function (err) {
-            if (err) {
-                console.error('DB error', err);
+        // First check if a report with this UID and date already exists
+        db.get(`SELECT id FROM reports WHERE uid = ? AND report_date = ?`, [uid, report_date], async (checkErr, row) => {
+            if (checkErr) {
+                console.error('DB check error', checkErr);
                 return res.render('index', { error: 'Database error' });
             }
-            if (this.changes === 0) {
-                // duplicate (same uid+report_date)
-                return res.render('index', { error: 'You have already submitted a report for this date.' });
+
+            // If a row exists, it's a duplicate
+            if (row) {
+                return res.render('index', {
+                    error: `You (${uid}) have already submitted a report for ${report_date}. Each user can only submit one report per day.`
+                });
             }
 
-            // append to excel
-            try {
-                await appendToExcel({ uid, name, team, activities: formattedActivities, report_date, submitted_at });
-            } catch (e) {
-                console.warn('Excel append failed', e.message);
-            }
+            // Format activities with counts
+            const formattedActivities = Array.isArray(activities)
+                ? activities.map(activity => ({
+                    name: activity,
+                    count: counts[activity] || ''
+                }))
+                : [{ name: activities, count: counts[activities] || '' }];
 
-            return res.render('index', { success: 'Report submitted successfully' });
+            const submitted_at = new Date().toISOString();
+
+            // Insert the new record
+            const stmt = db.prepare(`INSERT INTO reports (uid, name, team, activities, report_date, submitted_at) VALUES (?, ?, ?, ?, ?, ?)`);
+            stmt.run(uid, name, team, JSON.stringify(formattedActivities), report_date, submitted_at, async function (err) {
+                if (err) {
+                    console.error('DB error', err);
+                    return res.render('index', { error: 'Database error: ' + err.message });
+                }
+
+                // append to excel
+                try {
+                    await appendToExcel({ uid, name, team, activities: formattedActivities, report_date, submitted_at });
+                } catch (e) {
+                    console.warn('Excel append failed', e.message);
+                }
+
+                return res.render('index', { success: 'Report submitted successfully' });
+            });
         });
     } catch (e) {
         console.error(e);
-        res.render('index', { error: 'Server error' });
+        res.render('index', { error: 'Server error: ' + e.message });
     }
 });
 
@@ -133,13 +203,106 @@ app.get('/export-to-sheets', (req, res) => {
     res.redirect('https://docs.google.com/spreadsheets/create');
 });
 
+// Generate Excel file from database
+async function generateExcelFromDatabase() {
+    return new Promise((resolve, reject) => {
+        db.all(`SELECT * FROM reports ORDER BY report_date DESC, submitted_at DESC`, async (err, rows) => {
+            if (err) {
+                return reject(err);
+            }
+
+            try {
+                const workbook = new ExcelJS.Workbook();
+                const sheet = workbook.addWorksheet('Reports');
+
+                // Add header row
+                sheet.addRow(['UID', 'Name', 'Team', 'Report Date', 'Activity', 'Count/Hours', 'Submitted At']);
+
+                // Format header row
+                const headerRow = sheet.getRow(1);
+                headerRow.font = { bold: true };
+                headerRow.eachCell(cell => {
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FFE0E0E0' }
+                    };
+                    cell.border = {
+                        top: { style: 'thin' },
+                        left: { style: 'thin' },
+                        bottom: { style: 'thin' },
+                        right: { style: 'thin' }
+                    };
+                });
+
+                // Add data rows
+                for (const row of rows) {
+                    const activities = JSON.parse(row.activities);
+                    for (const activity of activities) {
+                        sheet.addRow([
+                            row.uid,
+                            row.name,
+                            row.team,
+                            row.report_date,
+                            activity.name,
+                            activity.count,
+                            row.submitted_at
+                        ]);
+                    }
+                }
+
+                // Auto-filter for all columns to make analysis easier
+                sheet.autoFilter = {
+                    from: { row: 1, column: 1 },
+                    to: { row: 1, column: 7 }
+                };
+
+                // Make all columns wider for better visibility
+                sheet.columns.forEach(column => {
+                    column.width = 20;
+                });
+
+                // Add conditional formatting for better readability
+                for (let i = 2; i <= sheet.rowCount; i++) {
+                    const row = sheet.getRow(i);
+                    // Alternate row colors for readability
+                    if (i % 2 === 0) {
+                        row.eachCell(cell => {
+                            cell.fill = {
+                                type: 'pattern',
+                                pattern: 'solid',
+                                fgColor: { argb: 'FFFAFAFA' }
+                            };
+                        });
+                    }
+                }
+
+                await workbook.xlsx.writeFile(EXCEL_FILE);
+                resolve();
+            } catch (error) {
+                reject(error);
+            }
+        });
+    });
+}
+
 // Download excel file
-app.get('/export', (req, res) => {
-    const file = EXCEL_FILE;
-    if (fs.existsSync(file)) {
-        res.download(file);
-    } else {
-        res.status(404).render('index', { error: 'Excel file not found yet' });
+app.get('/export', async (req, res) => {
+    try {
+        if (!fs.existsSync(EXCEL_FILE)) {
+            // If the Excel file doesn't exist, generate it from the database
+            await generateExcelFromDatabase();
+        }
+
+        // Now the file should exist, download it
+        if (fs.existsSync(EXCEL_FILE)) {
+            res.download(EXCEL_FILE);
+        } else {
+            res.status(404).render('index', { error: 'Could not generate Excel file' });
+        }
+    } catch (error) {
+        console.error('Error generating Excel file:', error);
+        res.status(500).render('index', { error: 'Error generating Excel file' });
     }
 });
 
