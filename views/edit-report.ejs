@@ -104,17 +104,17 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
-                    <i class="fas fa-edit text-2xl mr-3"></i>
-                    <span class="font-bold text-xl">Edit Faculty Report</span>
+                    <i class="fas fa-edit text-xl sm:text-2xl mr-2 sm:mr-3"></i>
+                    <span class="font-bold text-base sm:text-xl">Edit Report</span>
                 </div>
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 sm:space-x-4">
                     <a href="/admin" class="flex items-center text-indigo-100 hover:text-white">
-                        <i class="fas fa-arrow-left mr-2"></i>
-                        <span>Back to Dashboard</span>
+                        <i class="fas fa-arrow-left mr-1 sm:mr-2"></i>
+                        <span class="hidden sm:inline">Back</span>
                     </a>
                     <a href="/admin/logout" class="flex items-center text-indigo-100 hover:text-white">
-                        <span class="mr-2">Logout</span>
-                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="hidden sm:inline">Logout</span>
+                        <i class="fas fa-sign-out-alt sm:ml-2"></i>
                     </a>
                 </div>
             </div>
@@ -167,7 +167,7 @@
                             <!-- UID -->
                             <div>
                                 <label for="uid" class="primary-label">Faculty ID</label>
-                                <input type="text" id="uid" name="uid" required
+                                <input type="number" id="uid" name="uid" required
                                     class="w-full primary-input rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                                     value="<%= report.uid %>">
                             </div>
@@ -213,18 +213,18 @@
 
                             <div class="space-y-4 mt-4">
                                 <!-- Team tabs -->
-                                <div class="flex border-b border-gray-200 mb-4">
+                                <div class="flex flex-wrap overflow-x-auto border-b border-gray-200 mb-4">
                                     <button type="button"
-                                        class="py-2 px-8 text-sm font-medium border-b-2 border-indigo-500 text-indigo-600 team-tab"
+                                        class="py-2 px-3 sm:px-8 text-xs sm:text-sm font-medium border-b-2 border-indigo-500 text-indigo-600 team-tab"
                                         data-team="Secrecy">Secrecy Cell</button>
                                     <button type="button"
-                                        class="py-2 px-8 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 team-tab"
+                                        class="py-2 px-3 sm:px-8 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 team-tab"
                                         data-team="Generation">Generation & Vetting</button>
                                     <button type="button"
-                                        class="py-2 px-8 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 team-tab"
+                                        class="py-2 px-3 sm:px-8 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 team-tab"
                                         data-team="Translation">Translation</button>
                                     <button type="button"
-                                        class="py-2 px-8 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 team-tab"
+                                        class="py-2 px-3 sm:px-8 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 team-tab"
                                         data-team="Editing">Editing</button>
                                 </div>
 
@@ -233,21 +233,26 @@
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <% secrecyActivities.forEach(activity=> { %>
                                             <div
-                                                class="flex items-center space-x-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-md">
-                                                <input id="secrecy-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
-                                                    name="activities" type="checkbox" value="<%= activity %>"
-                                                    <%=report.activities.some(a=> a.name === activity) ? 'checked' : ''
-                                                %>
-                                                class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
-                                                <label for="secrecy-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
-                                                    class="flex-1 text-sm font-medium text-gray-700">
-                                                    <%= activity %>
-                                                </label>
-                                                <div class="w-32">
+                                                class="flex flex-wrap items-center space-x-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-md">
+                                                <div class="flex items-center mr-2 min-w-[60%]">
+                                                    <input
+                                                        id="secrecy-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
+                                                        name="activities" type="checkbox" value="<%= activity %>"
+                                                        <%=report.activities.some(a=> a.name === activity) ? 'checked' :
+                                                    ''
+                                                    %>
+                                                    class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                                                    <label
+                                                        for="secrecy-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
+                                                        class="ml-2 text-xs sm:text-sm font-medium text-gray-700">
+                                                        <%= activity %>
+                                                    </label>
+                                                </div>
+                                                <div class="w-20 sm:w-32 mt-1 sm:mt-0">
                                                     <input type="number" name="counts[<%= activity %>]" min="0"
-                                                        placeholder="Count/Hours"
+                                                        placeholder="Count"
                                                         value="<%= report.activities.find(a => a.name === activity)?.count || '' %>"
-                                                        class="w-full py-1 px-2 text-sm border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                        class="w-full py-1 px-2 text-xs sm:text-sm border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                                 </div>
                                             </div>
                                             <% }) %>
@@ -259,23 +264,26 @@
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <% generationActivities.forEach(activity=> { %>
                                             <div
-                                                class="flex items-center space-x-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-md">
-                                                <input
-                                                    id="generation-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
-                                                    name="activities" type="checkbox" value="<%= activity %>"
-                                                    <%=report.activities.some(a=> a.name === activity) ? 'checked' : ''
-                                                %>
-                                                class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
-                                                <label
-                                                    for="generation-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
-                                                    class="flex-1 text-sm font-medium text-gray-700">
-                                                    <%= activity %>
-                                                </label>
-                                                <div class="w-32">
+                                                class="flex flex-wrap items-center space-x-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-md">
+                                                <div class="flex items-center mr-2 min-w-[60%]">
+                                                    <input
+                                                        id="generation-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
+                                                        name="activities" type="checkbox" value="<%= activity %>"
+                                                        <%=report.activities.some(a=> a.name === activity) ? 'checked' :
+                                                    ''
+                                                    %>
+                                                    class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                                                    <label
+                                                        for="generation-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
+                                                        class="ml-2 text-xs sm:text-sm font-medium text-gray-700">
+                                                        <%= activity %>
+                                                    </label>
+                                                </div>
+                                                <div class="w-20 sm:w-32 mt-1 sm:mt-0">
                                                     <input type="number" name="counts[<%= activity %>]" min="0"
-                                                        placeholder="Count/Hours"
+                                                        placeholder="Count"
                                                         value="<%= report.activities.find(a => a.name === activity)?.count || '' %>"
-                                                        class="w-full py-1 px-2 text-sm border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                        class="w-full py-1 px-2 text-xs sm:text-sm border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                                 </div>
                                             </div>
                                             <% }) %>
@@ -287,23 +295,26 @@
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <% translationActivities.forEach(activity=> { %>
                                             <div
-                                                class="flex items-center space-x-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-md">
-                                                <input
-                                                    id="translation-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
-                                                    name="activities" type="checkbox" value="<%= activity %>"
-                                                    <%=report.activities.some(a=> a.name === activity) ? 'checked' : ''
-                                                %>
-                                                class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
-                                                <label
-                                                    for="translation-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
-                                                    class="flex-1 text-sm font-medium text-gray-700">
-                                                    <%= activity %>
-                                                </label>
-                                                <div class="w-32">
+                                                class="flex flex-wrap items-center space-x-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-md">
+                                                <div class="flex items-center mr-2 min-w-[60%]">
+                                                    <input
+                                                        id="translation-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
+                                                        name="activities" type="checkbox" value="<%= activity %>"
+                                                        <%=report.activities.some(a=> a.name === activity) ? 'checked' :
+                                                    ''
+                                                    %>
+                                                    class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                                                    <label
+                                                        for="translation-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
+                                                        class="ml-2 text-xs sm:text-sm font-medium text-gray-700">
+                                                        <%= activity %>
+                                                    </label>
+                                                </div>
+                                                <div class="w-20 sm:w-32 mt-1 sm:mt-0">
                                                     <input type="number" name="counts[<%= activity %>]" min="0"
-                                                        placeholder="Count/Hours"
+                                                        placeholder="Count"
                                                         value="<%= report.activities.find(a => a.name === activity)?.count || '' %>"
-                                                        class="w-full py-1 px-2 text-sm border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                        class="w-full py-1 px-2 text-xs sm:text-sm border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                                 </div>
                                             </div>
                                             <% }) %>
@@ -315,21 +326,26 @@
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <% editingActivities.forEach(activity=> { %>
                                             <div
-                                                class="flex items-center space-x-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-md">
-                                                <input id="editing-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
-                                                    name="activities" type="checkbox" value="<%= activity %>"
-                                                    <%=report.activities.some(a=> a.name === activity) ? 'checked' : ''
-                                                %>
-                                                class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
-                                                <label for="editing-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
-                                                    class="flex-1 text-sm font-medium text-gray-700">
-                                                    <%= activity %>
-                                                </label>
-                                                <div class="w-32">
+                                                class="flex flex-wrap items-center space-x-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-md">
+                                                <div class="flex items-center mr-2 min-w-[60%]">
+                                                    <input
+                                                        id="editing-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
+                                                        name="activities" type="checkbox" value="<%= activity %>"
+                                                        <%=report.activities.some(a=> a.name === activity) ? 'checked' :
+                                                    ''
+                                                    %>
+                                                    class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                                                    <label
+                                                        for="editing-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
+                                                        class="ml-2 text-xs sm:text-sm font-medium text-gray-700">
+                                                        <%= activity %>
+                                                    </label>
+                                                </div>
+                                                <div class="w-20 sm:w-32 mt-1 sm:mt-0">
                                                     <input type="number" name="counts[<%= activity %>]" min="0"
-                                                        placeholder="Count/Hours"
+                                                        placeholder="Count"
                                                         value="<%= report.activities.find(a => a.name === activity)?.count || '' %>"
-                                                        class="w-full py-1 px-2 text-sm border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                        class="w-full py-1 px-2 text-xs sm:text-sm border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                                 </div>
                                             </div>
                                             <% }) %>
@@ -340,12 +356,12 @@
 
                         <div class="pt-5 flex justify-between border-t border-gray-200 mt-8">
                             <a href="/admin"
-                                class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md transition-colors shadow-sm">
-                                <i class="fas fa-arrow-left mr-2"></i> Cancel
+                                class="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md transition-colors shadow-sm">
+                                <i class="fas fa-arrow-left mr-1 sm:mr-2"></i> Cancel
                             </a>
                             <button type="submit"
-                                class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors shadow-sm">
-                                <i class="fas fa-save mr-2"></i> Update Report
+                                class="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors shadow-sm">
+                                <i class="fas fa-save mr-1 sm:mr-2"></i> Update Report
                             </button>
                         </div>
                     </form>

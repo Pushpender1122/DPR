@@ -4,9 +4,9 @@ const dbFile = path.join(__dirname, 'reports.db');
 const db = new sqlite3.Database(dbFile);
 
 db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS reports (
+  db.run(`CREATE TABLE IF NOT EXISTS reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uid TEXT NOT NULL,
+    uid INTEGER NOT NULL,
     name TEXT NOT NULL,
     team TEXT NOT NULL,
     activities TEXT NOT NULL,

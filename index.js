@@ -48,7 +48,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uid TEXT NOT NULL,
+    uid INTEGER NOT NULL,
     name TEXT NOT NULL,
     team TEXT NOT NULL,
     activities TEXT NOT NULL,
@@ -151,8 +151,14 @@ app.post('/submit', async (req, res) => {
             return res.render('index', { error: 'Missing required fields' });
         }
 
+        // Convert UID to integer
+        const uidInt = parseInt(uid, 10);
+        if (isNaN(uidInt)) {
+            return res.render('index', { error: 'Faculty ID must be a number' });
+        }
+
         // First check if a report with this UID and date already exists
-        db.get(`SELECT id FROM reports WHERE uid = ? AND report_date = ?`, [uid, report_date], async (checkErr, row) => {
+        db.get(`SELECT id FROM reports WHERE uid = ? AND report_date = ?`, [uidInt, report_date], async (checkErr, row) => {
             if (checkErr) {
                 console.error('DB check error', checkErr);
                 return res.render('index', { error: 'Database error' });
@@ -161,7 +167,7 @@ app.post('/submit', async (req, res) => {
             // If a row exists, it's a duplicate
             if (row) {
                 return res.render('index', {
-                    error: `You (${uid}) have already submitted a report for ${report_date}. Each user can only submit one report per day.`
+                    error: `You (${uidInt}) have already submitted a report for ${report_date}. Each user can only submit one report per day.`
                 });
             }
 
@@ -177,7 +183,7 @@ app.post('/submit', async (req, res) => {
 
             // Insert the new record
             const stmt = db.prepare(`INSERT INTO reports (uid, name, team, activities, report_date, submitted_at) VALUES (?, ?, ?, ?, ?, ?)`);
-            stmt.run(uid, name, team, JSON.stringify(formattedActivities), report_date, submitted_at, async function (err) {
+            stmt.run(uidInt, name, team, JSON.stringify(formattedActivities), report_date, submitted_at, async function (err) {
                 if (err) {
                     console.error('DB error', err);
                     return res.render('index', { error: 'Database error: ' + err.message });
@@ -185,7 +191,7 @@ app.post('/submit', async (req, res) => {
 
                 // append to excel
                 try {
-                    await appendToExcel({ uid, name, team, activities: formattedActivities, report_date, submitted_at });
+                    await appendToExcel({ uid: uidInt, name, team, activities: formattedActivities, report_date, submitted_at });
                 } catch (e) {
                     console.warn('Excel append failed', e.message);
                 }
@@ -256,8 +262,16 @@ app.get('/admin', requireAdmin, (req, res) => {
     }
 
     if (uid) {
-        conditions.push(`uid LIKE ?`);
-        params.push(`%${uid}%`);
+        // Try to parse as integer first for exact matching
+        const uidInt = parseInt(uid, 10);
+        if (!isNaN(uidInt)) {
+            conditions.push(`uid = ?`);
+            params.push(uidInt);
+        } else {
+            // Fallback to string matching for partial search
+            conditions.push(`uid LIKE ?`);
+            params.push(`%${uid}%`);
+        }
     }
 
     // Combine conditions if any
@@ -401,6 +415,12 @@ app.post('/admin/edit/:id', requireAdmin, (req, res) => {
     const reportId = req.params.id;
     const { uid, name, team, report_date, activities } = req.body;
 
+    // Convert UID to integer
+    const uidInt = parseInt(uid, 10);
+    if (isNaN(uidInt)) {
+        return res.redirect(`/admin/edit/${reportId}?error=${encodeURIComponent('Faculty ID must be a number')}`);
+    }
+
     // Format activities similar to the submit route
     let formattedActivities = [];
 
@@ -421,7 +441,7 @@ app.post('/admin/edit/:id', requireAdmin, (req, res) => {
 
     // Update the record
     const stmt = db.prepare(`UPDATE reports SET uid=?, name=?, team=?, activities=?, report_date=? WHERE id=?`);
-    stmt.run(uid, name, team, JSON.stringify(formattedActivities), report_date, reportId, function (err) {
+    stmt.run(uidInt, name, team, JSON.stringify(formattedActivities), report_date, reportId, function (err) {
         if (err) {
             console.error('DB update error', err);
             return res.redirect(`/admin/edit/${reportId}?error=${encodeURIComponent('Database error: ' + err.message)}`);
