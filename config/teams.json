@@ -1,0 +1,75 @@
+{
+  "teams": {
+    "Secrecy Cell": {
+      "displayName": "Secrecy Cell",
+      "icon": "fas fa-lock",
+      "activities": [
+        "Handling Queries from DSR and Front Office",
+        "Resolving of student Queries",
+        "Scrutiny",
+        "Calling and Follow up",
+        "Re-evaluation",
+        "Rectification/Proration of Marks",
+        "Academic Benefit",
+        "Confidential Result Declaration",
+        "Question Bank",
+        "Data Entry of marks",
+        "Duty leave",
+        "Staff Indisciplinary",
+        "Coordination in External Re-evaluation",
+        "Coordination in External Question Paper",
+        "Reports/Record maintenance/Data Analysis",
+        "Email Handling",
+        "Digitalization of Record",
+        "Co-ordination"
+      ]
+    },
+    "Generation & Vetting": {
+      "displayName": "Generation & Vetting",
+      "icon": "fas fa-file-alt",
+      "activities": [
+        "Generation of Question Paper",
+        "Email handling",
+        "Resolving of faculty Queries/ Calling(telephonic and visitors)",
+        "RMS Handling",
+        "Vetting-faculty dealing",
+        "Vetting - Calling",
+        "Envelope preparation(For vetting )",
+        "Sorting and pending status updation",
+        "Reports / Record maintenance",
+        "Closer report",
+        "Final Question paper verification",
+        "Final Question paper uploading for Evalution/DE"
+      ]
+    },
+    "Translation": {
+      "displayName": "Translation",
+      "icon": "fas fa-language",
+      "activities": [
+        "Translation",
+        "Printing / downloading",
+        "answer key sorting /set making/ stapling / pasting of stickers / seating plan etc",
+        "Stamping of brown envelopes",
+        "Packing",
+        "Verification & sorting of pakets / answer key",
+        "Answer key -(Manual)",
+        "Answer key - (Online )",
+        "Reports/Record maintenance",
+        "Shredding of confidential documents",
+        "Dispatch QP/OMR"
+      ]
+    },
+    "Editing": {
+      "displayName": "Editing",
+      "icon": "fas fa-edit",
+      "activities": [
+        "Editing",
+        "Question bank entry on MyClass",
+        "Proof reading",
+        "Final question paper uploading for Evaulation/DE",
+        "Reports/Record maintenance",
+        "Segregation of QP"
+      ]
+    }
+  }
+}

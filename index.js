@@ -13,6 +13,17 @@ dotenv.config()
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Load teams configuration
+const teamsConfigPath = path.join(__dirname, 'config', 'teams.json');
+let teamsConfig = {};
+try {
+    const configData = fs.readFileSync(teamsConfigPath, 'utf8');
+    teamsConfig = JSON.parse(configData);
+} catch (error) {
+    console.error('Error loading teams configuration:', error);
+    process.exit(1);
+}
+
 // Admin credentials - hardcoded for now
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
@@ -48,7 +59,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uid INTEGER NOT NULL,
+    uid TEXT NOT NULL,
     name TEXT NOT NULL,
     team TEXT NOT NULL,
     activities TEXT NOT NULL,
@@ -139,7 +150,7 @@ async function appendToExcel(row) {
 
 // Render index page
 app.get('/', (req, res) => {
-    res.render('index');
+    res.render('index', { teamsConfig });
 });
 
 // Submit endpoint
@@ -148,26 +159,26 @@ app.post('/submit', async (req, res) => {
         const { uid, name, team, report_date, activities, counts } = req.body;
 
         if (!uid || !name || !team || !report_date || !activities) {
-            return res.render('index', { error: 'Missing required fields' });
+            return res.render('index', { error: 'Missing required fields', teamsConfig });
         }
 
-        // Convert UID to integer
-        const uidInt = parseInt(uid, 10);
-        if (isNaN(uidInt)) {
-            return res.render('index', { error: 'Faculty ID must be a number' });
+        // Validate UID is not empty
+        if (!uid.trim()) {
+            return res.render('index', { error: 'Faculty ID cannot be empty', teamsConfig });
         }
 
         // First check if a report with this UID and date already exists
-        db.get(`SELECT id FROM reports WHERE uid = ? AND report_date = ?`, [uidInt, report_date], async (checkErr, row) => {
+        db.get(`SELECT id FROM reports WHERE uid = ? AND report_date = ?`, [uid, report_date], async (checkErr, row) => {
             if (checkErr) {
                 console.error('DB check error', checkErr);
-                return res.render('index', { error: 'Database error' });
+                return res.render('index', { error: 'Database error', teamsConfig });
             }
 
             // If a row exists, it's a duplicate
             if (row) {
                 return res.render('index', {
-                    error: `You (${uidInt}) have already submitted a report for ${report_date}. Each user can only submit one report per day.`
+                    error: `You (${uid}) have already submitted a report for ${report_date}. Each user can only submit one report per day.`,
+                    teamsConfig
                 });
             }
 
@@ -183,25 +194,25 @@ app.post('/submit', async (req, res) => {
 
             // Insert the new record
             const stmt = db.prepare(`INSERT INTO reports (uid, name, team, activities, report_date, submitted_at) VALUES (?, ?, ?, ?, ?, ?)`);
-            stmt.run(uidInt, name, team, JSON.stringify(formattedActivities), report_date, submitted_at, async function (err) {
+            stmt.run(uid, name, team, JSON.stringify(formattedActivities), report_date, submitted_at, async function (err) {
                 if (err) {
                     console.error('DB error', err);
-                    return res.render('index', { error: 'Database error: ' + err.message });
+                    return res.render('index', { error: 'Database error: ' + err.message, teamsConfig });
                 }
 
                 // append to excel
                 try {
-                    await appendToExcel({ uid: uidInt, name, team, activities: formattedActivities, report_date, submitted_at });
+                    await appendToExcel({ uid, name, team, activities: formattedActivities, report_date, submitted_at });
                 } catch (e) {
                     console.warn('Excel append failed', e.message);
                 }
 
-                return res.render('index', { success: 'Report submitted successfully' });
+                return res.render('index', { success: 'Report submitted successfully', teamsConfig });
             });
         });
     } catch (e) {
         console.error(e);
-        res.render('index', { error: 'Server error: ' + e.message });
+        res.render('index', { error: 'Server error: ' + e.message, teamsConfig });
     }
 });
 
@@ -261,16 +272,9 @@ app.get('/admin', requireAdmin, (req, res) => {
     }
 
     if (uid) {
-        // Try to parse as integer first for exact matching
-        const uidInt = parseInt(uid, 10);
-        if (!isNaN(uidInt)) {
-            conditions.push(`uid = ?`);
-            params.push(uidInt);
-        } else {
-            // Fallback to string matching for partial search
-            conditions.push(`uid LIKE ?`);
-            params.push(`%${uid}%`);
-        }
+        // Search UID as string
+        conditions.push(`uid LIKE ?`);
+        params.push(`%${uid}%`);
     }
 
     // Combine conditions if any
@@ -341,72 +345,16 @@ app.get('/admin/edit/:id', requireAdmin, (req, res) => {
             activities: reportActivities
         };
 
-        // Get the list of all activities for each team
-        const secrecyActivities = [
-            "Handling Queries from DSR and Front Office",
-            "Resolving of student Queries",
-            "Scrutiny",
-            "Calling and Follow up",
-            "Re-evaluation",
-            "Rectification/Proration of Marks",
-            "Academic Benefit",
-            "Confidential Result Declaration",
-            "Question Bank",
-            "Data Entry of marks",
-            "Duty leave",
-            "Staff Indisciplinary",
-            "Coordination in External Re-evaluation",
-            "Coordination in External Question Paper",
-            "Reports/Record maintenance/Data Analysis",
-            "Email Handling",
-            "Digitalization of Record",
-            "Co-ordination"
-        ];
-
-        const generationActivities = [
-            "Generation of Question Paper",
-            "Email handling",
-            "Resolving of faculty Queries/ Calling(telephonic and visitors)",
-            "RMS Handling",
-            "Vetting-faculty dealing",
-            "Vetting - Calling",
-            "Envelope preparation(For vetting )",
-            "Sorting and pending status updation",
-            "Reports / Record maintenance",
-            "Closer report",
-            "Final Question paper verification",
-            "Final Question paper uploading for Evalution/DE"
-        ];
-
-        const translationActivities = [
-            "Translation",
-            "Printing / downloading",
-            "answer key sorting /set making/ stapling / pasting of stickers / seating plan etc",
-            "Stamping of brown envelopes",
-            "Packing",
-            "Verification & sorting of pakets / answer key",
-            "Answer key -(Manual)",
-            "Answer key - (Online )",
-            "Reports/Record maintenance",
-            "Shredding of confidential documents",
-            "Dispatch QP/OMR"
-        ];
-
-        const editingActivities = [
-            "Editing",
-            "Question bank entry on MyClass",
-            "Proof reading",
-            "Final question paper uploading for Evaulation/DE",
-            "Reports/Record maintenance",
-            "Segregation of QP"
-        ];
+        // Create team mapping for frontend
+        const teamMapping = {};
+        Object.keys(teamsConfig.teams).forEach(teamKey => {
+            teamMapping[teamKey] = teamKey.replace(/\s+/g, '').replace('&', '');
+        });
 
         res.render('edit-report', {
             report,
-            secrecyActivities,
-            generationActivities,
-            translationActivities,
-            editingActivities
+            teamsConfig,
+            teamMapping
         });
     });
 });// Admin update report - protected by authentication
@@ -414,10 +362,9 @@ app.post('/admin/edit/:id', requireAdmin, (req, res) => {
     const reportId = req.params.id;
     const { uid, name, team, report_date, activities } = req.body;
 
-    // Convert UID to integer
-    const uidInt = parseInt(uid, 10);
-    if (isNaN(uidInt)) {
-        return res.redirect(`/admin/edit/${reportId}?error=${encodeURIComponent('Faculty ID must be a number')}`);
+    // Validate UID is not empty
+    if (!uid || !uid.trim()) {
+        return res.redirect(`/admin/edit/${reportId}?error=${encodeURIComponent('Faculty ID cannot be empty')}`);
     }
 
     // Format activities similar to the submit route
@@ -440,7 +387,7 @@ app.post('/admin/edit/:id', requireAdmin, (req, res) => {
 
     // Update the record
     const stmt = db.prepare(`UPDATE reports SET uid=?, name=?, team=?, activities=?, report_date=? WHERE id=?`);
-    stmt.run(uidInt, name, team, JSON.stringify(formattedActivities), report_date, reportId, function (err) {
+    stmt.run(uid, name, team, JSON.stringify(formattedActivities), report_date, reportId, function (err) {
         if (err) {
             console.error('DB update error', err);
             return res.redirect(`/admin/edit/${reportId}?error=${encodeURIComponent('Database error: ' + err.message)}`);

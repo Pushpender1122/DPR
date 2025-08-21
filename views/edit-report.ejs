@@ -167,7 +167,7 @@
                             <!-- UID -->
                             <div>
                                 <label for="uid" class="primary-label">Faculty ID</label>
-                                <input type="number" id="uid" name="uid" required
+                                <input type="text" id="uid" name="uid" required
                                     class="w-full primary-input rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                                     value="<%= report.uid %>">
                             </div>
@@ -185,14 +185,11 @@
                                 <label for="team" class="primary-label">Team</label>
                                 <select id="team" name="team" required
                                     class="w-full primary-input rounded-md focus:ring-indigo-500 focus:border-indigo-500">
-                                    <option value="Secrecy Cell" <%=report.team==='Secrecy Cell' ? 'selected' : '' %>
-                                        >Secrecy Cell</option>
-                                    <option value="Generation & Vetting" <%=report.team==='Generation & Vetting'
-                                        ? 'selected' : '' %>>Generation & Vetting</option>
-                                    <option value="Translation" <%=report.team==='Translation' ? 'selected' : '' %>
-                                        >Translation</option>
-                                    <option value="Editing" <%=report.team==='Editing' ? 'selected' : '' %>>Editing
-                                    </option>
+                                    <% Object.keys(teamsConfig.teams).forEach((teamKey)=> { %>
+                                        <option value="<%= teamKey %>" <%=report.team===teamKey ? 'selected' : '' %>><%=
+                                                teamsConfig.teams[teamKey].displayName %>
+                                        </option>
+                                        <% }) %>
                                 </select>
                             </div>
 
@@ -214,143 +211,56 @@
                             <div class="space-y-4 mt-4">
                                 <!-- Team tabs -->
                                 <div class="flex flex-wrap overflow-x-auto border-b border-gray-200 mb-4">
-                                    <button type="button"
-                                        class="py-2 px-3 sm:px-8 text-xs sm:text-sm font-medium border-b-2 border-indigo-500 text-indigo-600 team-tab"
-                                        data-team="Secrecy">Secrecy Cell</button>
-                                    <button type="button"
-                                        class="py-2 px-3 sm:px-8 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 team-tab"
-                                        data-team="Generation">Generation & Vetting</button>
-                                    <button type="button"
-                                        class="py-2 px-3 sm:px-8 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 team-tab"
-                                        data-team="Translation">Translation</button>
-                                    <button type="button"
-                                        class="py-2 px-3 sm:px-8 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 team-tab"
-                                        data-team="Editing">Editing</button>
+                                    <% Object.keys(teamsConfig.teams).forEach((teamKey, index)=> {
+                                        const team = teamsConfig.teams[teamKey];
+                                        const teamId = teamKey.replace(/\s+/g, '').replace('&', '');
+                                        const isFirst = index === 0;
+                                        %>
+                                        <button type="button"
+                                            class="py-2 px-3 sm:px-8 text-xs sm:text-sm font-medium border-b-2 <%= isFirst ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' %> team-tab"
+                                            data-team="<%= teamId %>">
+                                            <%= team.displayName %>
+                                        </button>
+                                        <% }) %>
                                 </div>
 
-                                <!-- Secrecy Cell Activities -->
-                                <div id="Secrecy-activities" class="team-activities">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <% secrecyActivities.forEach(activity=> { %>
-                                            <div
-                                                class="flex flex-wrap items-center space-x-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-md">
-                                                <div class="flex items-center mr-2 min-w-[60%]">
-                                                    <input
-                                                        id="secrecy-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
-                                                        name="activities" type="checkbox" value="<%= activity %>"
-                                                        <%=report.activities.some(a=> a.name === activity) ? 'checked' :
-                                                    ''
-                                                    %>
-                                                    class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
-                                                    <label
-                                                        for="secrecy-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
-                                                        class="ml-2 text-xs sm:text-sm font-medium text-gray-700">
-                                                        <%= activity %>
-                                                    </label>
+                                <!-- Dynamic Team Activities -->
+                                <% Object.keys(teamsConfig.teams).forEach((teamKey, index)=> {
+                                    const team = teamsConfig.teams[teamKey];
+                                    const teamId = teamKey.replace(/\s+/g, '').replace('&', '');
+                                    const isFirst = index === 0;
+                                    %>
+                                    <div id="<%= teamId %>-activities"
+                                        class="team-activities <%= isFirst ? '' : 'hidden' %>">
+                                        <div class="space-y-2">
+                                            <% team.activities.forEach(activity=> { %>
+                                                <div
+                                                    class="flex items-start gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-md">
+                                                    <div class="flex items-start flex-1 min-w-0">
+                                                        <input
+                                                            id="<%= teamId.toLowerCase() %>-<%= activity.replace(/\s+/g, '-').toLowerCase().replace(/[^\w-]/g, '_') %>"
+                                                            name="activities[]" type="checkbox" value="<%= activity %>"
+                                                            <%=report.activities.some(a=> a.name === activity) ?
+                                                        'checked' : '' %>
+                                                        class="w-4 h-4 mt-1 text-indigo-600 rounded
+                                                        focus:ring-indigo-500 flex-shrink-0">
+                                                        <label
+                                                            for="<%= teamId.toLowerCase() %>-<%= activity.replace(/\s+/g, '-').toLowerCase().replace(/[^\w-]/g, '_') %>"
+                                                            class="ml-3 text-sm font-medium text-gray-700 break-words leading-6">
+                                                            <%= activity %>
+                                                        </label>
+                                                    </div>
+                                                    <div class="flex-shrink-0 w-28">
+                                                        <input type="number" name="counts[<%= activity %>]" min="0"
+                                                            placeholder="Count"
+                                                            value="<%= report.activities.find(a => a.name === activity)?.count || '' %>"
+                                                            class="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-white">
+                                                    </div>
                                                 </div>
-                                                <div class="w-20 sm:w-32 mt-1 sm:mt-0">
-                                                    <input type="number" name="counts[<%= activity %>]" min="0"
-                                                        placeholder="Count"
-                                                        value="<%= report.activities.find(a => a.name === activity)?.count || '' %>"
-                                                        class="w-full py-1 px-2 text-xs sm:text-sm border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                                </div>
-                                            </div>
-                                            <% }) %>
+                                                <% }) %>
+                                        </div>
                                     </div>
-                                </div>
-
-                                <!-- Generation & Vetting Activities -->
-                                <div id="Generation-activities" class="team-activities hidden">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <% generationActivities.forEach(activity=> { %>
-                                            <div
-                                                class="flex flex-wrap items-center space-x-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-md">
-                                                <div class="flex items-center mr-2 min-w-[60%]">
-                                                    <input
-                                                        id="generation-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
-                                                        name="activities" type="checkbox" value="<%= activity %>"
-                                                        <%=report.activities.some(a=> a.name === activity) ? 'checked' :
-                                                    ''
-                                                    %>
-                                                    class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
-                                                    <label
-                                                        for="generation-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
-                                                        class="ml-2 text-xs sm:text-sm font-medium text-gray-700">
-                                                        <%= activity %>
-                                                    </label>
-                                                </div>
-                                                <div class="w-20 sm:w-32 mt-1 sm:mt-0">
-                                                    <input type="number" name="counts[<%= activity %>]" min="0"
-                                                        placeholder="Count"
-                                                        value="<%= report.activities.find(a => a.name === activity)?.count || '' %>"
-                                                        class="w-full py-1 px-2 text-xs sm:text-sm border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                                </div>
-                                            </div>
-                                            <% }) %>
-                                    </div>
-                                </div>
-
-                                <!-- Translation Activities -->
-                                <div id="Translation-activities" class="team-activities hidden">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <% translationActivities.forEach(activity=> { %>
-                                            <div
-                                                class="flex flex-wrap items-center space-x-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-md">
-                                                <div class="flex items-center mr-2 min-w-[60%]">
-                                                    <input
-                                                        id="translation-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
-                                                        name="activities" type="checkbox" value="<%= activity %>"
-                                                        <%=report.activities.some(a=> a.name === activity) ? 'checked' :
-                                                    ''
-                                                    %>
-                                                    class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
-                                                    <label
-                                                        for="translation-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
-                                                        class="ml-2 text-xs sm:text-sm font-medium text-gray-700">
-                                                        <%= activity %>
-                                                    </label>
-                                                </div>
-                                                <div class="w-20 sm:w-32 mt-1 sm:mt-0">
-                                                    <input type="number" name="counts[<%= activity %>]" min="0"
-                                                        placeholder="Count"
-                                                        value="<%= report.activities.find(a => a.name === activity)?.count || '' %>"
-                                                        class="w-full py-1 px-2 text-xs sm:text-sm border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                                </div>
-                                            </div>
-                                            <% }) %>
-                                    </div>
-                                </div>
-
-                                <!-- Editing Activities -->
-                                <div id="Editing-activities" class="team-activities hidden">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <% editingActivities.forEach(activity=> { %>
-                                            <div
-                                                class="flex flex-wrap items-center space-x-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-md">
-                                                <div class="flex items-center mr-2 min-w-[60%]">
-                                                    <input
-                                                        id="editing-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
-                                                        name="activities" type="checkbox" value="<%= activity %>"
-                                                        <%=report.activities.some(a=> a.name === activity) ? 'checked' :
-                                                    ''
-                                                    %>
-                                                    class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
-                                                    <label
-                                                        for="editing-<%= activity.replace(/\s+/g, '-').toLowerCase() %>"
-                                                        class="ml-2 text-xs sm:text-sm font-medium text-gray-700">
-                                                        <%= activity %>
-                                                    </label>
-                                                </div>
-                                                <div class="w-20 sm:w-32 mt-1 sm:mt-0">
-                                                    <input type="number" name="counts[<%= activity %>]" min="0"
-                                                        placeholder="Count"
-                                                        value="<%= report.activities.find(a => a.name === activity)?.count || '' %>"
-                                                        class="w-full py-1 px-2 text-xs sm:text-sm border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                                </div>
-                                            </div>
-                                            <% }) %>
-                                    </div>
-                                </div>
+                                    <% }) %>
                             </div>
                         </div>
 
@@ -379,20 +289,16 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Use the pre-generated team mapping from server
+            const teamMapping = <% - JSON.stringify(teamMapping) %>;
+
+            console.log('Team mapping:', teamMapping);
+
             // Get the team from the select dropdown
             const reportTeam = document.getElementById('team').value;
 
-            // Map the team value to the tab
-            let activeTeam = 'Secrecy'; // Default
-            if (reportTeam === 'Secrecy Cell') {
-                activeTeam = 'Secrecy';
-            } else if (reportTeam === 'Generation & Vetting') {
-                activeTeam = 'Generation';
-            } else if (reportTeam === 'Translation') {
-                activeTeam = 'Translation';
-            } else if (reportTeam === 'Editing') {
-                activeTeam = 'Editing';
-            }
+            // Find the active team ID
+            const activeTeam = teamMapping[reportTeam] || Object.values(teamMapping)[0];
 
             // Show the tab content for the team on page load
             setActiveTeam(activeTeam);
@@ -400,19 +306,9 @@
             // Listen for changes to the team dropdown
             document.getElementById('team').addEventListener('change', function () {
                 const selectedTeam = this.value;
-                let tabTeam = 'Secrecy';
-
-                // Map the selected team to the appropriate tab
-                if (selectedTeam === 'Secrecy Cell') {
-                    tabTeam = 'Secrecy';
-                } else if (selectedTeam === 'Generation & Vetting') {
-                    tabTeam = 'Generation';
-                } else if (selectedTeam === 'Translation') {
-                    tabTeam = 'Translation';
-                } else if (selectedTeam === 'Editing') {
-                    tabTeam = 'Editing';
-                }
-
+                console.log('Dropdown changed to:', selectedTeam);
+                const tabTeam = teamMapping[selectedTeam] || Object.values(teamMapping)[0];
+                console.log('Mapped to team ID:', tabTeam);
                 setActiveTeam(tabTeam);
             });
 
@@ -425,14 +321,12 @@
 
                     // Update the team dropdown based on which tab was clicked
                     const selectElement = document.getElementById('team');
-                    if (team === 'Secrecy') {
-                        selectElement.value = 'Secrecy Cell';
-                    } else if (team === 'Generation') {
-                        selectElement.value = 'Generation & Vetting';
-                    } else if (team === 'Translation') {
-                        selectElement.value = 'Translation';
-                    } else if (team === 'Editing') {
-                        selectElement.value = 'Editing';
+                    // Find the team key for this team ID
+                    for (const [teamKey, teamId] of Object.entries(teamMapping)) {
+                        if (teamId === team) {
+                            selectElement.value = teamKey;
+                            break;
+                        }
                     }
 
                     setActiveTeam(team);
@@ -458,7 +352,13 @@
                 document.querySelectorAll('.team-activities').forEach(div => {
                     div.classList.add('hidden');
                 });
-                document.getElementById(`${team}-activities`).classList.remove('hidden');
+                const activeSection = document.getElementById(`${team}-activities`);
+                console.log('Looking for section:', `${team}-activities`, activeSection);
+                if (activeSection) {
+                    activeSection.classList.remove('hidden');
+                } else {
+                    console.error('Section not found:', `${team}-activities`);
+                }
             }
         });
     </script>

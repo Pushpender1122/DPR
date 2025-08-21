@@ -4,8 +4,7 @@
   "description": "Simple Express server for faculty daily reporting (SQLite + Excel export)",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "init-db": "node init_db.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
