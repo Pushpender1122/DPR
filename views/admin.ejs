@@ -236,7 +236,9 @@
                                                         <div class="col-span-2">
                                                             <span class="text-gray-500">Submitted:</span>
                                                             <span class="font-medium ml-1">
-                                                                <%= new Date(report.submitted_at).toLocaleString() %>
+                                                                <%= new
+                                                                    Date(report.submitted_at).toLocaleString("en-IN", {
+                                                                    timeZone: "Asia/Kolkata" }) %>
                                                             </span>
                                                         </div>
                                                     </div>
@@ -339,7 +341,8 @@
                                                         </div>
                                                     </td>
                                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                        <%= new Date(report.submitted_at).toLocaleString() %>
+                                                        <%= new Date(report.submitted_at).toLocaleString("en-IN", {
+                                                            timeZone: "Asia/Kolkata" }) %>
                                                     </td>
                                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                                         <a href="/admin/edit/<%= report.id %>"

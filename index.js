@@ -190,7 +190,9 @@ app.post('/submit', async (req, res) => {
                 }))
                 : [{ name: activities, count: counts[activities] || '' }];
 
-            const submitted_at = new Date().toISOString();
+            // Store as ISO string for database compatibility, but we'll format it for display
+            let submitted_at = new Date().toISOString();
+
 
             // Insert the new record
             const stmt = db.prepare(`INSERT INTO reports (uid, name, team, activities, report_date, submitted_at) VALUES (?, ?, ?, ?, ?, ?)`);

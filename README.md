@@ -45,6 +45,20 @@ A comprehensive web application for faculty members to submit daily activity rep
 
 ## ⚡ Quick Start
 
+### **🚀 Windows Users (Easiest)**
+
+**No technical knowledge required!**
+
+**Double-click `setup-and-run.bat`** - Complete setup and launch
+
+- Automatically checks for Node.js
+- Downloads and installs Node.js if needed
+- Installs dependencies automatically
+- Starts the server
+- Use the same file for all subsequent runs
+
+### **🛠️ Manual Setup (All Platforms)**
+
 ### 1. **Installation**
 
 ```bash
@@ -87,6 +101,7 @@ npm start
 
 ```
 faculty-reporter/
+├── setup-and-run.bat          # 🚀 Windows auto-setup & launcher
 ├── config/
 │   └── teams.json              # Team and activity configuration
 ├── views/
