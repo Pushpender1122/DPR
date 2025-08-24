@@ -213,7 +213,7 @@
                                 <div class="flex flex-wrap overflow-x-auto border-b border-gray-200 mb-4">
                                     <% Object.keys(teamsConfig.teams).forEach((teamKey, index)=> {
                                         const team = teamsConfig.teams[teamKey];
-                                        const teamId = teamKey.replace(/\s+/g, '').replace('&', '');
+                                        const teamId = teamKey.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
                                         const isFirst = index === 0;
                                         %>
                                         <button type="button"
@@ -227,7 +227,7 @@
                                 <!-- Dynamic Team Activities -->
                                 <% Object.keys(teamsConfig.teams).forEach((teamKey, index)=> {
                                     const team = teamsConfig.teams[teamKey];
-                                    const teamId = teamKey.replace(/\s+/g, '').replace('&', '');
+                                    const teamId = teamKey.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
                                     const isFirst = index === 0;
                                     %>
                                     <div id="<%= teamId %>-activities"
@@ -241,8 +241,7 @@
                                                             id="<%= teamId.toLowerCase() %>-<%= activity.replace(/\s+/g, '-').toLowerCase().replace(/[^\w-]/g, '_') %>"
                                                             name="activities[]" type="checkbox" value="<%= activity %>"
                                                             <%=report.activities.some(a=> a.name === activity) ?
-                                                        'checked' : '' %>
-                                                        class="w-4 h-4 mt-1 text-indigo-600 rounded
+                                                        'checked' : '' %> class="w-4 h-4 mt-1 text-indigo-600 rounded
                                                         focus:ring-indigo-500 flex-shrink-0">
                                                         <label
                                                             for="<%= teamId.toLowerCase() %>-<%= activity.replace(/\s+/g, '-').toLowerCase().replace(/[^\w-]/g, '_') %>"
@@ -289,10 +288,26 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Use the pre-generated team mapping from server
-            const teamMapping = <% - JSON.stringify(teamMapping) %>;
+            // Build team mapping from teams config
 
-            console.log('Team mapping:', teamMapping);
+            const teamsConfigData = <%- JSON.stringify(teamsConfig) %>;
+            const teamMapping = {};
+            // Create consistent team mapping
+            Object.keys(teamsConfigData.teams).forEach(teamKey => {
+                const teamId = teamKey.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
+                teamMapping[teamKey] = teamId;
+            });
+
+            // Check if all required elements exist
+            const teamSelect = document.getElementById('team');
+            if (!teamSelect) {
+                return;
+            }
+
+            // List all team activity divs and verify they exist
+            Object.values(teamMapping).forEach(teamId => {
+                const activityDiv = document.getElementById(`${teamId}-activities`);
+            });
 
             // Get the team from the select dropdown
             const reportTeam = document.getElementById('team').value;
@@ -306,9 +321,7 @@
             // Listen for changes to the team dropdown
             document.getElementById('team').addEventListener('change', function () {
                 const selectedTeam = this.value;
-                console.log('Dropdown changed to:', selectedTeam);
                 const tabTeam = teamMapping[selectedTeam] || Object.values(teamMapping)[0];
-                console.log('Mapped to team ID:', tabTeam);
                 setActiveTeam(tabTeam);
             });
 
@@ -334,8 +347,6 @@
             });
 
             function setActiveTeam(team) {
-                console.log('Setting active team:', team);
-
                 // Update tab styles
                 document.querySelectorAll('.team-tab').forEach(tab => {
                     const tabTeam = tab.getAttribute('data-team');
@@ -352,12 +363,10 @@
                 document.querySelectorAll('.team-activities').forEach(div => {
                     div.classList.add('hidden');
                 });
+
                 const activeSection = document.getElementById(`${team}-activities`);
-                console.log('Looking for section:', `${team}-activities`, activeSection);
                 if (activeSection) {
                     activeSection.classList.remove('hidden');
-                } else {
-                    console.error('Section not found:', `${team}-activities`);
                 }
             }
         });

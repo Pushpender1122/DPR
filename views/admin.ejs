@@ -2,411 +2,377 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Admin Dashboard | Faculty Reports</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard | Faculty Reports</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
 <body class="bg-gray-100 min-h-screen">
-    <!-- Top navigation bar -->
-    <nav class="bg-indigo-600 text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <i class="fas fa-chart-bar text-2xl mr-3"></i>
-                    <span class="font-bold text-xl">Faculty Reports Admin</span>
-                </div>
-                <div class="flex items-center">
-                    <a href="/admin/logout" class="flex items-center text-indigo-100 hover:text-white">
-                        <span class="mr-2">Logout</span>
-                        <i class="fas fa-sign-out-alt"></i>
-                    </a>
-                </div>
-            </div>
+  <!-- Top navigation bar -->
+  <nav class="bg-indigo-600 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex items-center">
+          <i class="fas fa-chart-bar text-2xl mr-3"></i>
+          <span class="font-bold text-xl">Faculty Reports Admin</span>
         </div>
-    </nav>
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Page header -->
-        <div class="bg-white shadow rounded-lg mb-6 p-4">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-800">Reports Dashboard</h1>
-                    <p class="text-gray-600 mt-1">View and manage all faculty daily reports</p>
-                </div>
-                <div class="mt-4 md:mt-0 flex flex-wrap gap-2">
-                    <a href="/"
-                        class="flex justify-center items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition-colors">
-                        <i class="fas fa-home mr-2"></i>
-                        Back to Form
-                    </a>
-                    <a href="/export"
-                        class="flex justify-center items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors">
-                        <i class="fas fa-file-excel mr-2"></i>
-                        Download Excel
-                    </a>
-                    <a href="/export-to-sheets"
-                        class="flex justify-center items-center px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors">
-                        <i class="fas fa-table mr-2"></i>
-                        Export to Sheets
-                    </a>
-                </div>
-            </div>
+        <div class="flex items-center">
+          <a href="/admin/logout" class="flex items-center text-indigo-100 hover:text-white">
+            <span class="mr-2">Logout</span>
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
         </div>
+      </div>
+    </div>
+  </nav>
 
-        <% if (locals.error) { %>
-            <div class="mb-6 p-4 rounded bg-red-100 text-red-800 border-l-4 border-red-600">
-                <div class="flex items-center">
-                    <i class="fas fa-exclamation-circle mr-2"></i>
-                    <span>
-                        <%= error %>
-                    </span>
-                </div>
-            </div>
-            <% } %>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Page header -->
+    <div class="bg-white shadow rounded-lg mb-6 p-4">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800">Reports Dashboard</h1>
+          <p class="text-gray-600 mt-1">View and manage all faculty daily reports</p>
+        </div>
+        <div class="mt-4 md:mt-0 flex flex-wrap gap-2">
+          <a href="/" class="flex justify-center items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition-colors">
+            <i class="fas fa-home mr-2"></i>
+            Back to Form
+          </a>
+          <a href="/export" class="flex justify-center items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors">
+            <i class="fas fa-file-excel mr-2"></i>
+            Download Excel
+          </a>
+          <a href="/export-to-sheets" class="flex justify-center items-center px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors">
+            <i class="fas fa-table mr-2"></i>
+            Export to Sheets
+          </a>
+        </div>
+      </div>
+    </div>
 
-                <% if (locals.success) { %>
-                    <div class="mb-6 p-4 rounded bg-green-100 text-green-800 border-l-4 border-green-600">
-                        <div class="flex items-center">
-                            <i class="fas fa-check-circle mr-2"></i>
-                            <span>
-                                <%= success %>
-                            </span>
-                        </div>
-                    </div>
-                    <% } %>
+    <% if (locals.error) { %>
+    <div class="mb-6 p-4 rounded bg-red-100 text-red-800 border-l-4 border-red-600">
+      <div class="flex items-center">
+        <i class="fas fa-exclamation-circle mr-2"></i>
+        <span>
+          <%= error %>
+        </span>
+      </div>
+    </div>
+    <% } %>
 
-                        <!-- Stats cards -->
-                        <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6">
-                            <div class="bg-white rounded-lg shadow p-3 sm:p-6">
-                                <div class="flex items-center">
-                                    <div class="p-2 sm:p-3 rounded-full bg-indigo-100 text-indigo-600 mr-2 sm:mr-4">
-                                        <i class="fas fa-users"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-gray-500 text-xs sm:text-sm">Total Reports</p>
-                                        <p class="text-lg sm:text-2xl font-bold">
-                                            <%= locals.reports ? reports.length : 0 %>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+    <% if (locals.success) { %>
+    <div class="mb-6 p-4 rounded bg-green-100 text-green-800 border-l-4 border-green-600">
+      <div class="flex items-center">
+        <i class="fas fa-check-circle mr-2"></i>
+        <span>
+          <%= success %>
+        </span>
+      </div>
+    </div>
+    <% } %>
 
-                            <div class="bg-white rounded-lg shadow p-3 sm:p-6">
-                                <div class="flex items-center">
-                                    <div class="p-2 sm:p-3 rounded-full bg-green-100 text-green-600 mr-2 sm:mr-4">
-                                        <i class="fas fa-calendar-day"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-gray-500 text-xs sm:text-sm">Today's Reports</p>
-                                        <p class="text-lg sm:text-2xl font-bold">
-                                            <% const today=new Date().toISOString().split('T')[0]; const
+    <!-- Stats cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6">
+      <div class="bg-white rounded-lg shadow p-3 sm:p-6">
+        <div class="flex items-center">
+          <div class="p-2 sm:p-3 rounded-full bg-indigo-100 text-indigo-600 mr-2 sm:mr-4">
+            <i class="fas fa-users"></i>
+          </div>
+          <div>
+            <p class="text-gray-500 text-xs sm:text-sm">Total Reports</p>
+            <p class="text-lg sm:text-2xl font-bold">
+              <%= locals.reports ? reports.length : 0 %>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow p-3 sm:p-6">
+        <div class="flex items-center">
+          <div class="p-2 sm:p-3 rounded-full bg-green-100 text-green-600 mr-2 sm:mr-4">
+            <i class="fas fa-calendar-day"></i>
+          </div>
+          <div>
+            <p class="text-gray-500 text-xs sm:text-sm">Today's Reports</p>
+            <p class="text-lg sm:text-2xl font-bold">
+              <% const today=new Date().toISOString().split('T')[0]; const
                                                 todayCount=locals.reports ? reports.filter(r=> r.report_date ===
                                                 today).length :
                                                 0;
                                                 %>
-                                                <%= todayCount %>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+              <%= todayCount %>
+            </p>
+          </div>
+        </div>
+      </div>
 
-                            <div class="bg-white rounded-lg shadow p-3 sm:p-6">
-                                <div class="flex items-center">
-                                    <div class="p-2 sm:p-3 rounded-full bg-blue-100 text-blue-600 mr-2 sm:mr-4">
-                                        <i class="fas fa-user-check"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-gray-500 text-xs sm:text-sm">Unique Users</p>
-                                        <p class="text-lg sm:text-2xl font-bold">
-                                            <% const uniqueUids=locals.reports ? [...new Set(reports.map(r=>
+      <div class="bg-white rounded-lg shadow p-3 sm:p-6">
+        <div class="flex items-center">
+          <div class="p-2 sm:p-3 rounded-full bg-blue-100 text-blue-600 mr-2 sm:mr-4">
+            <i class="fas fa-user-check"></i>
+          </div>
+          <div>
+            <p class="text-gray-500 text-xs sm:text-sm">Unique Users</p>
+            <p class="text-lg sm:text-2xl font-bold">
+              <% const uniqueUids=locals.reports ? [...new Set(reports.map(r=>
                                                 r.uid))].length :
                                                 0;
                                                 %>
-                                                <%= uniqueUids %>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+              <%= uniqueUids %>
+            </p>
+          </div>
+        </div>
+      </div>
 
-                            <div class="bg-white rounded-lg shadow p-3 sm:p-6">
-                                <div class="flex items-center">
-                                    <div class="p-2 sm:p-3 rounded-full bg-yellow-100 text-yellow-600 mr-2 sm:mr-4">
-                                        <i class="fas fa-tasks"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-gray-500 text-xs sm:text-sm">Total Activities</p>
-                                        <p class="text-lg sm:text-2xl font-bold">
-                                            <% let activityCount=0; if (locals.reports) { reports.forEach(report=> {
+      <div class="bg-white rounded-lg shadow p-3 sm:p-6">
+        <div class="flex items-center">
+          <div class="p-2 sm:p-3 rounded-full bg-yellow-100 text-yellow-600 mr-2 sm:mr-4">
+            <i class="fas fa-tasks"></i>
+          </div>
+          <div>
+            <p class="text-gray-500 text-xs sm:text-sm">Total Activities</p>
+            <p class="text-lg sm:text-2xl font-bold">
+              <% let activityCount=0; if (locals.reports) { reports.forEach(report=> {
                                                 activityCount += report.activities.length;
                                                 });
                                                 }
                                                 %>
-                                                <%= activityCount %>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Reports table -->
-                        <div class="bg-white shadow rounded-lg overflow-hidden">
-                            <div class="p-6 border-b border-gray-200">
-                                <h2 class="text-lg font-semibold text-gray-800">All Reports</h2>
-
-                                <!-- Filter section -->
-                                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-                                    <div>
-                                        <label for="date-filter"
-                                            class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Filter by
-                                            Date</label>
-                                        <input type="date" id="date-filter" name="date"
-                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs sm:text-sm"
-                                            value="<%= locals.filters?.date || '' %>">
-                                    </div>
-                                    <div>
-                                        <label for="name-filter"
-                                            class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Filter by
-                                            Name</label>
-                                        <input type="text" id="name-filter" name="name" placeholder="Enter faculty name"
-                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs sm:text-sm"
-                                            value="<%= locals.filters?.name || '' %>">
-                                    </div>
-                                    <div>
-                                        <label for="uid-filter"
-                                            class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Filter by
-                                            UID</label>
-                                        <input type="text" id="uid-filter" name="uid" placeholder="Enter faculty ID"
-                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs sm:text-sm"
-                                            value="<%= locals.filters?.uid || '' %>">
-                                    </div>
-                                </div>
-
-                                <div class="mt-4 flex justify-between flex-wrap gap-2">
-                                    <button id="apply-filters"
-                                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md text-xs sm:text-sm font-medium flex items-center">
-                                        <i class="fas fa-filter mr-1 sm:mr-2"></i> Apply Filters
-                                    </button>
-                                    <button id="clear-filters"
-                                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-md text-xs sm:text-sm font-medium flex items-center">
-                                        <i class="fas fa-times mr-1 sm:mr-2"></i> Clear Filters
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Mobile view - Card layout -->
-                            <div class="block md:hidden">
-                                <% if (locals.reports && reports.length> 0) { %>
-                                    <div class="space-y-3 p-3">
-                                        <% reports.forEach((report, index)=> { %>
-                                            <div
-                                                class="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
-                                                <div
-                                                    class="px-3 py-2 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-                                                    <div>
-                                                        <span class="font-medium text-gray-800 text-sm">
-                                                            <%= report.name %>
-                                                        </span>
-                                                        <span
-                                                            class="ml-1 px-1.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
-                                                            <%= report.team %>
-                                                        </span>
-                                                    </div>
-                                                    <a href="/admin/edit/<%= report.id %>"
-                                                        class="text-indigo-600 hover:text-indigo-900 text-sm">
-                                                        <i class="fas fa-edit"></i> Edit
-                                                    </a>
-                                                </div>
-                                                <div class="px-3 py-2 border-b border-gray-200">
-                                                    <div class="grid grid-cols-2 gap-1 text-xs">
-                                                        <div>
-                                                            <span class="text-gray-500">ID:</span>
-                                                            <span class="font-medium ml-1">
-                                                                <%= report.uid %>
-                                                            </span>
-                                                        </div>
-                                                        <div>
-                                                            <span class="text-gray-500">Date:</span>
-                                                            <span class="font-medium ml-1">
-                                                                <%= report.report_date %>
-                                                            </span>
-                                                        </div>
-                                                        <div class="col-span-2">
-                                                            <span class="text-gray-500">Submitted:</span>
-                                                            <span class="font-medium ml-1">
-                                                                <%= new
-                                                                    Date(report.submitted_at).toLocaleString("en-IN", {
-                                                                    timeZone: "Asia/Kolkata" }) %>
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="px-3 py-2">
-                                                    <h4 class="text-xs font-medium text-gray-700 mb-1">Activities:</h4>
-                                                    <div class="max-h-36 overflow-y-auto bg-gray-50 rounded p-2">
-                                                        <ul class="list-disc pl-4 space-y-0.5 text-xs">
-                                                            <% report.activities.forEach(activity=> { %>
-                                                                <li>
-                                                                    <span class="font-medium">
-                                                                        <%= activity.name %>
-                                                                    </span>
-                                                                    <% if (activity.count) { %>
-                                                                        - <span class="text-gray-500">
-                                                                            <%= activity.count %>
-                                                                        </span>
-                                                                        <% } %>
-                                                                </li>
-                                                                <% }) %>
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <% }) %>
-                                    </div>
-                                    <% } else { %>
-                                        <div class="flex flex-col items-center py-4">
-                                            <i class="fas fa-inbox text-gray-400 text-3xl sm:text-5xl mb-2 sm:mb-4"></i>
-                                            <p class="text-sm">No reports found</p>
-                                        </div>
-                                        <% } %>
-                            </div>
-
-                            <!-- Desktop view - Table layout -->
-                            <div class="hidden md:block overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                UID</th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Name</th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Team</th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Report Date</th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Activities</th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Submitted At</th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200">
-                                        <% if (locals.reports && reports.length> 0) { %>
-                                            <% reports.forEach((report, index)=> { %>
-                                                <tr
-                                                    class="<%= index % 2 === 0 ? 'bg-white' : 'bg-gray-50' %> hover:bg-gray-100 transition-colors">
-                                                    <td
-                                                        class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                        <%= report.uid %>
-                                                    </td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                        <%= report.name %>
-                                                    </td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                        <span
-                                                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
-                                                            <%= report.team %>
-                                                        </span>
-                                                    </td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                        <%= report.report_date %>
-                                                    </td>
-                                                    <td class="px-6 py-4 text-sm text-gray-600">
-                                                        <div class="max-h-32 overflow-y-auto">
-                                                            <ul class="list-disc pl-5 space-y-1">
-                                                                <% report.activities.forEach(activity=> { %>
-                                                                    <li>
-                                                                        <span class="font-medium">
-                                                                            <%= activity.name %>
-                                                                        </span>
-                                                                        <% if (activity.count) { %>
-                                                                            - <span class="text-gray-500">
-                                                                                <%= activity.count %>
-                                                                            </span>
-                                                                            <% } %>
-                                                                    </li>
-                                                                    <% }) %>
-                                                            </ul>
-                                                        </div>
-                                                    </td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                        <%= new Date(report.submitted_at).toLocaleString("en-IN", {
-                                                            timeZone: "Asia/Kolkata" }) %>
-                                                    </td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                        <a href="/admin/edit/<%= report.id %>"
-                                                            class="text-indigo-600 hover:text-indigo-900 mr-3">
-                                                            <i class="fas fa-edit"></i> Edit
-                                                        </a>
-                                                    </td>
-                                                </tr>
-                                                <% }) %>
-                                                    <% } else { %>
-                                                        <tr>
-                                                            <td colspan="6"
-                                                                class="px-6 py-4 text-center text-sm text-gray-500">
-                                                                <div class="flex flex-col items-center py-6">
-                                                                    <i
-                                                                        class="fas fa-inbox text-gray-400 text-5xl mb-4"></i>
-                                                                    <p>No reports found</p>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                        <% } %>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+              <%= activityCount %>
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 py-4 mt-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p class="text-center text-gray-500 text-sm">
-                &copy; <%= new Date().getFullYear() %> Faculty Daily Reporter | Admin Dashboard
-            </p>
+    <!-- Reports table -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+      <div class="p-6 border-b border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-800">All Reports</h2>
+
+        <!-- Filter section -->
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+          <div>
+            <label for="date-filter" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Filter by
+              Date</label>
+            <input type="date" id="date-filter" name="date" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs sm:text-sm" value="<%= locals.filters?.date || '' %>">
+          </div>
+          <div>
+            <label for="name-filter" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Filter by
+              Name</label>
+            <input type="text" id="name-filter" name="name" placeholder="Enter faculty name" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs sm:text-sm" value="<%= locals.filters?.name || '' %>">
+          </div>
+          <div>
+            <label for="uid-filter" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Filter by
+              UID</label>
+            <input type="text" id="uid-filter" name="uid" placeholder="Enter faculty ID" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs sm:text-sm" value="<%= locals.filters?.uid || '' %>">
+          </div>
         </div>
-    </footer>
 
-    <!-- JavaScript for filtering and other functionality -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Apply filters
-            document.getElementById('apply-filters').addEventListener('click', function () {
-                const dateFilter = document.getElementById('date-filter').value;
-                const nameFilter = document.getElementById('name-filter').value;
-                const uidFilter = document.getElementById('uid-filter').value;
+        <div class="mt-4 flex justify-between flex-wrap gap-2">
+          <button id="apply-filters" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md text-xs sm:text-sm font-medium flex items-center">
+            <i class="fas fa-filter mr-1 sm:mr-2"></i> Apply Filters
+          </button>
+          <button id="clear-filters" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-md text-xs sm:text-sm font-medium flex items-center">
+            <i class="fas fa-times mr-1 sm:mr-2"></i> Clear Filters
+          </button>
+        </div>
+      </div>
 
-                let url = '/admin?';
-                if (dateFilter) url += `date=${encodeURIComponent(dateFilter)}&`;
-                if (nameFilter) url += `name=${encodeURIComponent(nameFilter)}&`;
-                if (uidFilter) url += `uid=${encodeURIComponent(uidFilter)}&`;
+      <!-- Mobile view - Card layout -->
+      <div class="block md:hidden">
+        <% if (locals.reports && reports.length> 0) { %>
+        <div class="space-y-3 p-3">
+          <% reports.forEach((report, index)=> { %>
+          <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+            <div class="px-3 py-2 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+              <div>
+                <span class="font-medium text-gray-800 text-sm">
+                  <%= report.name %>
+                </span>
+                <span class="ml-1 px-1.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                  <%= report.team %>
+                </span>
+              </div>
+              <a href="/admin/edit/<%= report.id %>" class="text-indigo-600 hover:text-indigo-900 text-sm">
+                <i class="fas fa-edit"></i> Edit
+              </a>
+            </div>
+            <div class="px-3 py-2 border-b border-gray-200">
+              <div class="grid grid-cols-2 gap-1 text-xs">
+                <div>
+                  <span class="text-gray-500">ID:</span>
+                  <span class="font-medium ml-1">
+                    <%= report.uid %>
+                  </span>
+                </div>
+                <div>
+                  <span class="text-gray-500">Date:</span>
+                  <span class="font-medium ml-1">
+                    <%= report.report_date %>
+                  </span>
+                </div>
+                <div class="col-span-2">
+                  <span class="text-gray-500">Submitted:</span>
+                  <span class="font-medium ml-1">
+                    <%= report.submitted_at %>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="px-3 py-2">
+              <h4 class="text-xs font-medium text-gray-700 mb-1">Activities:</h4>
+              <div class="max-h-36 overflow-y-auto bg-gray-50 rounded p-2">
+                <ul class="list-disc pl-4 space-y-0.5 text-xs">
+                  <% report.activities.forEach(activity=> { %>
+                  <li>
+                    <span class="font-medium">
+                      <%= activity.name %>
+                    </span>
+                    <% if (activity.count) { %>
+                    - <span class="text-gray-500">
+                      <%= activity.count %>
+                    </span>
+                    <% } %>
+                  </li>
+                  <% }) %>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+        <% } else { %>
+        <div class="flex flex-col items-center py-4">
+          <i class="fas fa-inbox text-gray-400 text-3xl sm:text-5xl mb-2 sm:mb-4"></i>
+          <p class="text-sm">No reports found</p>
+        </div>
+        <% } %>
+      </div>
 
-                // Remove trailing & if it exists
-                if (url.endsWith('&')) {
-                    url = url.slice(0, -1);
-                }
+      <!-- Desktop view - Table layout -->
+      <div class="hidden md:block overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                UID</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Name</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Team</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Report Date</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Activities</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Submitted At</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% if (locals.reports && reports.length> 0) { %>
+            <% reports.forEach((report, index)=> { %>
+            <tr class="<%= index % 2 === 0 ? 'bg-white' : 'bg-gray-50' %> hover:bg-gray-100 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <%= report.uid %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <%= report.name %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                  <%= report.team %>
+                </span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <%= report.report_date %>
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-600">
+                <div class="max-h-32 overflow-y-auto">
+                  <ul class="list-disc pl-5 space-y-1">
+                    <% report.activities.forEach(activity=> { %>
+                    <li>
+                      <span class="font-medium">
+                        <%= activity.name %>
+                      </span>
+                      <% if (activity.count) { %>
+                      - <span class="text-gray-500">
+                        <%= activity.count %>
+                      </span>
+                      <% } %>
+                    </li>
+                    <% }) %>
+                  </ul>
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <%= report.submitted_at %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <a href="/admin/edit/<%= report.id %>" class="text-indigo-600 hover:text-indigo-900 mr-3">
+                  <i class="fas fa-edit"></i> Edit
+                </a>
+              </td>
+            </tr>
+            <% }) %>
+            <% } else { %>
+            <tr>
+              <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                <div class="flex flex-col items-center py-6">
+                  <i class="fas fa-inbox text-gray-400 text-5xl mb-4"></i>
+                  <p>No reports found</p>
+                </div>
+              </td>
+            </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-                window.location.href = url;
-            });
+  <!-- Footer -->
+  <footer class="bg-white border-t border-gray-200 py-4 mt-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <p class="text-center text-gray-500 text-sm">
+        &copy; <%= new Date().getFullYear() %> Faculty Daily Reporter | Admin Dashboard
+      </p>
+    </div>
+  </footer>
 
-            // Clear filters
-            document.getElementById('clear-filters').addEventListener('click', function () {
-                window.location.href = '/admin';
-            });
-        });
-    </script>
+  <!-- JavaScript for filtering and other functionality -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Apply filters
+      document.getElementById('apply-filters').addEventListener('click', function() {
+        const dateFilter = document.getElementById('date-filter').value;
+        const nameFilter = document.getElementById('name-filter').value;
+        const uidFilter = document.getElementById('uid-filter').value;
+
+        let url = '/admin?';
+        if (dateFilter) url += `date=${encodeURIComponent(dateFilter)}&`;
+        if (nameFilter) url += `name=${encodeURIComponent(nameFilter)}&`;
+        if (uidFilter) url += `uid=${encodeURIComponent(uidFilter)}&`;
+
+        // Remove trailing & if it exists
+        if (url.endsWith('&')) {
+          url = url.slice(0, -1);
+        }
+
+        window.location.href = url;
+      });
+
+      // Clear filters
+      document.getElementById('clear-filters').addEventListener('click', function() {
+        window.location.href = '/admin';
+      });
+    });
+  </script>
 </body>
 
 </html>

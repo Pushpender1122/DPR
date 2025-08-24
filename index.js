@@ -1,17 +1,34 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const sqlite3 = require('sqlite3').verbose();
 const ExcelJS = require('exceljs');
 const fs = require('fs');
 const path = require('path');
 const session = require('express-session');
 const dotenv = require('dotenv');
+const DatabaseManager = require('./dbManager');
 
 dotenv.config()
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Initialize Database Manager
+let dbManager;
+
+// Helper function to get IST formatted date
+function getISTDateTime() {
+    return new Date().toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
+}
 
 // Load teams configuration
 const teamsConfigPath = path.join(__dirname, 'config', 'teams.json');
@@ -24,7 +41,7 @@ try {
     process.exit(1);
 }
 
-// Admin credentials - hardcoded for now
+// Admin credentials
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
@@ -47,26 +64,56 @@ app.use(session({
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-const DB_FILE = path.join(__dirname, 'reports.db');
 const EXCEL_FILE = path.join(__dirname, 'reports.xlsx');
-
-const db = new sqlite3.Database(DB_FILE);
 
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Create table (if not exists) - store activity details as JSON so multiple activities allowed per submission
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS reports (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uid TEXT NOT NULL,
-    name TEXT NOT NULL,
-    team TEXT NOT NULL,
-    activities TEXT NOT NULL,
-    report_date TEXT NOT NULL,
-    submitted_at TEXT NOT NULL,
-    UNIQUE(uid, report_date)
-  )`);
+// Initialize databases
+async function initializeApp() {
+    try {
+        console.log('🚀 Starting Faculty Daily Reporter...');
+
+        // Initialize database manager
+        dbManager = new DatabaseManager();
+        const isPostgreSQLConnected = await dbManager.testPostgreSQLConnection();
+        if (isPostgreSQLConnected) {
+            console.log('✅ PostgreSQL connection successful');
+            await dbManager.initializeDatabases();
+        } else {
+            console.log('⚠️  PostgreSQL unavailable, continuing with SQLite only');
+            await dbManager.createSQLiteTables();
+        }
+
+        console.log('✅ Application initialized successfully!');
+
+        // Start server
+        app.listen(PORT, () => {
+            console.log(`🌐 Server running on http://localhost:${PORT}`);
+            console.log(`👨‍💼 Admin panel: http://localhost:${PORT}/admin/login`);
+        });
+
+    } catch (error) {
+        console.error('❌ Failed to initialize application:', error);
+        process.exit(1);
+    }
+}
+
+// Handle graceful shutdown
+process.on('SIGINT', async () => {
+    console.log('\n🛑 Shutting down gracefully...');
+    if (dbManager) {
+        await dbManager.closeConnections();
+    }
+    process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+    console.log('\n🛑 Shutting down gracefully...');
+    if (dbManager) {
+        await dbManager.closeConnections();
+    }
+    process.exit(0);
 });
 
 // Helper to append to Excel
@@ -167,54 +214,50 @@ app.post('/submit', async (req, res) => {
             return res.render('index', { error: 'Faculty ID cannot be empty', teamsConfig });
         }
 
-        // First check if a report with this UID and date already exists
-        db.get(`SELECT id FROM reports WHERE uid = ? AND report_date = ?`, [uid, report_date], async (checkErr, row) => {
-            if (checkErr) {
-                console.error('DB check error', checkErr);
-                return res.render('index', { error: 'Database error', teamsConfig });
-            }
-
-            // If a row exists, it's a duplicate
-            if (row) {
-                return res.render('index', {
-                    error: `You (${uid}) have already submitted a report for ${report_date}. Each user can only submit one report per day.`,
-                    teamsConfig
-                });
-            }
-
-            // Format activities with counts
-            const formattedActivities = Array.isArray(activities)
-                ? activities.map(activity => ({
-                    name: activity,
-                    count: counts[activity] || ''
-                }))
-                : [{ name: activities, count: counts[activities] || '' }];
-
-            // Store as ISO string for database compatibility, but we'll format it for display
-            let submitted_at = new Date().toISOString();
-
-
-            // Insert the new record
-            const stmt = db.prepare(`INSERT INTO reports (uid, name, team, activities, report_date, submitted_at) VALUES (?, ?, ?, ?, ?, ?)`);
-            stmt.run(uid, name, team, JSON.stringify(formattedActivities), report_date, submitted_at, async function (err) {
-                if (err) {
-                    console.error('DB error', err);
-                    return res.render('index', { error: 'Database error: ' + err.message, teamsConfig });
-                }
-
-                // append to excel
-                try {
-                    await appendToExcel({ uid, name, team, activities: formattedActivities, report_date, submitted_at });
-                } catch (e) {
-                    console.warn('Excel append failed', e.message);
-                }
-
-                return res.render('index', { success: 'Report submitted successfully', teamsConfig });
+        // Check for duplicate using our database manager
+        const existingReport = await dbManager.checkDuplicate(uid, report_date);
+        if (existingReport) {
+            return res.render('index', {
+                error: `You (${uid}) have already submitted a report for ${report_date}. Each user can only submit one report per day.`,
+                teamsConfig
             });
-        });
-    } catch (e) {
-        console.error(e);
-        res.render('index', { error: 'Server error: ' + e.message, teamsConfig });
+        }
+
+        // Format activities with counts
+        const formattedActivities = Array.isArray(activities)
+            ? activities.map(activity => ({
+                name: activity,
+                count: counts[activity] || ''
+            }))
+            : [{ name: activities, count: counts[activities] || '' }];
+
+        // Store in IST format for database consistency
+        const submitted_at = getISTDateTime();
+
+        // Insert into both databases using our database manager
+        const reportData = {
+            uid,
+            name,
+            team,
+            activities: JSON.stringify(formattedActivities),
+            report_date,
+            submitted_at
+        };
+
+        await dbManager.insertReport(reportData);
+
+        // Update Excel file
+        try {
+            await appendToExcel({ uid, name, team, activities: formattedActivities, report_date, submitted_at });
+        } catch (e) {
+            console.warn('Excel append failed', e.message);
+        }
+
+        return res.render('index', { success: 'Report submitted successfully', teamsConfig });
+
+    } catch (error) {
+        console.error('Submit error:', error);
+        res.render('index', { error: 'Server error: ' + error.message, teamsConfig });
     }
 });
 
@@ -253,45 +296,43 @@ function requireAdmin(req, res, next) {
 }
 
 // Admin dashboard - protected by authentication
-app.get('/admin', requireAdmin, (req, res) => {
-    // Get filter parameters
-    const { date, name, uid, error, success } = req.query;
+// Admin dashboard - protected by authentication
+app.get('/admin', requireAdmin, async (req, res) => {
+    try {
+        // Get filter parameters
+        const { date, name, uid, error, success } = req.query;
 
-    // Base query
-    let query = `SELECT * FROM reports`;
-    const params = [];
-    const conditions = [];
+        // Build query and parameters for filtering
+        let query = `SELECT * FROM reports`;
+        const params = [];
+        const conditions = [];
 
-    // Add filter conditions if provided
-    if (date) {
-        conditions.push(`report_date = ?`);
-        params.push(date);
-    }
-
-    if (name) {
-        conditions.push(`name LIKE ?`);
-        params.push(`%${name}%`);
-    }
-
-    if (uid) {
-        // Search UID as string
-        conditions.push(`uid LIKE ?`);
-        params.push(`%${uid}%`);
-    }
-
-    // Combine conditions if any
-    if (conditions.length > 0) {
-        query += ` WHERE ${conditions.join(' AND ')}`;
-    }
-
-    // Add sorting
-    query += ` ORDER BY report_date DESC, submitted_at DESC`;
-
-    // Execute the query
-    db.all(query, params, (err, rows) => {
-        if (err) {
-            return res.render('admin', { error: 'Database error', reports: [] });
+        // Add filter conditions if provided
+        if (date) {
+            conditions.push(`report_date = ?`);
+            params.push(date);
         }
+
+        if (name) {
+            conditions.push(`name LIKE ?`);
+            params.push(`%${name}%`);
+        }
+
+        if (uid) {
+            conditions.push(`uid LIKE ?`);
+            params.push(`%${uid}%`);
+        }
+
+        // Combine conditions if any
+        if (conditions.length > 0) {
+            query += ` WHERE ${conditions.join(' AND ')}`;
+        }
+
+        // Add sorting
+        query += ` ORDER BY report_date DESC, submitted_at DESC`;
+
+        // Get reports from SQLite (fast retrieval)
+        const rows = await dbManager.getAllReports(query, params);
 
         const reports = rows.map(row => ({
             ...row,
@@ -300,14 +341,23 @@ app.get('/admin', requireAdmin, (req, res) => {
 
         // Pass filters back to the template for displaying current filters
         const filters = { date, name, uid };
-        // Pass any error or success messages from query params
+
         res.render('admin', {
             reports,
             filters,
             error: error || null,
             success: success || null
         });
-    });
+
+    } catch (error) {
+        console.error('Admin dashboard error:', error);
+        res.render('admin', {
+            error: 'Database error: ' + error.message,
+            reports: [],
+            filters: {},
+            success: null
+        });
+    }
 });
 
 // Export to Google Sheets - protected by authentication
@@ -318,14 +368,13 @@ app.get('/export-to-sheets', requireAdmin, (req, res) => {
 });
 
 // Admin edit report form - protected by authentication
-app.get('/admin/edit/:id', requireAdmin, (req, res) => {
-    const reportId = req.params.id;
+// Admin edit report form - protected by authentication
+app.get('/admin/edit/:id', requireAdmin, async (req, res) => {
+    try {
+        const reportId = req.params.id;
 
-    db.get(`SELECT * FROM reports WHERE id = ?`, [reportId], (err, row) => {
-        if (err) {
-            console.error('Database error when fetching report:', err);
-            return res.redirect('/admin?error=' + encodeURIComponent('Database error: ' + err.message));
-        }
+        // Get report from SQLite using our database manager
+        const row = await dbManager.getReportById(reportId);
 
         if (!row) {
             console.error('Report not found with ID:', reportId);
@@ -350,139 +399,150 @@ app.get('/admin/edit/:id', requireAdmin, (req, res) => {
         // Create team mapping for frontend
         const teamMapping = {};
         Object.keys(teamsConfig.teams).forEach(teamKey => {
-            teamMapping[teamKey] = teamKey.replace(/\s+/g, '').replace('&', '');
+            // Create consistent team ID by removing spaces and special characters
+            const teamId = teamKey.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
+            teamMapping[teamKey] = teamId;
         });
+
+        console.log('Team mapping generated:', teamMapping);
 
         res.render('edit-report', {
             report,
             teamsConfig,
             teamMapping
         });
-    });
+
+    } catch (error) {
+        console.error('Database error when fetching report:', error);
+        return res.redirect('/admin?error=' + encodeURIComponent('Database error: ' + error.message));
+    }
 });// Admin update report - protected by authentication
-app.post('/admin/edit/:id', requireAdmin, (req, res) => {
-    const reportId = req.params.id;
-    const { uid, name, team, report_date, activities } = req.body;
+app.post('/admin/edit/:id', requireAdmin, async (req, res) => {
+    try {
+        const reportId = req.params.id;
+        const { uid, name, team, report_date, activities } = req.body;
 
-    // Validate UID is not empty
-    if (!uid || !uid.trim()) {
-        return res.redirect(`/admin/edit/${reportId}?error=${encodeURIComponent('Faculty ID cannot be empty')}`);
-    }
-
-    // Format activities similar to the submit route
-    let formattedActivities = [];
-
-    // Check if activities is an array (multiple activities selected)
-    if (Array.isArray(activities)) {
-        const counts = req.body.counts || {};
-        formattedActivities = activities.map(activity => ({
-            name: activity,
-            count: counts[activity] || ''
-        }));
-    } else if (activities) {
-        // Single activity
-        formattedActivities = [{
-            name: activities,
-            count: req.body.counts ? req.body.counts[activities] || '' : ''
-        }];
-    }
-
-    // Update the record
-    const stmt = db.prepare(`UPDATE reports SET uid=?, name=?, team=?, activities=?, report_date=? WHERE id=?`);
-    stmt.run(uid, name, team, JSON.stringify(formattedActivities), report_date, reportId, function (err) {
-        if (err) {
-            console.error('DB update error', err);
-            return res.redirect(`/admin/edit/${reportId}?error=${encodeURIComponent('Database error: ' + err.message)}`);
+        // Validate UID is not empty
+        if (!uid || !uid.trim()) {
+            return res.redirect(`/admin/edit/${reportId}?error=${encodeURIComponent('Faculty ID cannot be empty')}`);
         }
+
+        // Format activities similar to the submit route
+        let formattedActivities = [];
+
+        // Check if activities is an array (multiple activities selected)
+        if (Array.isArray(activities)) {
+            const counts = req.body.counts || {};
+            formattedActivities = activities.map(activity => ({
+                name: activity,
+                count: counts[activity] || ''
+            }));
+        } else if (activities) {
+            // Single activity
+            formattedActivities = [{
+                name: activities,
+                count: req.body.counts ? req.body.counts[activities] || '' : ''
+            }];
+        }
+
+        // Update in both databases using our database manager
+        const updateData = {
+            uid,
+            name,
+            team,
+            activities: JSON.stringify(formattedActivities),
+            report_date
+        };
+
+        await dbManager.updateReport(reportId, updateData);
 
         // Regenerate the Excel file to reflect the changes
         generateExcelFromDatabase().catch(e => console.warn('Excel regeneration failed', e.message));
 
         return res.redirect('/admin?success=Report+updated+successfully');
-    });
+
+    } catch (error) {
+        console.error('DB update error', error);
+        return res.redirect(`/admin/edit/${reportId}?error=${encodeURIComponent('Database error: ' + error.message)}`);
+    }
 });
 
 // Generate Excel file from database
 async function generateExcelFromDatabase() {
-    return new Promise((resolve, reject) => {
-        db.all(`SELECT * FROM reports ORDER BY report_date DESC, submitted_at DESC`, async (err, rows) => {
-            if (err) {
-                return reject(err);
+    try {
+        // Get all reports from SQLite using our database manager
+        const rows = await dbManager.getAllReports();
+
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Reports');
+
+        // Add header row
+        sheet.addRow(['UID', 'Name', 'Team', 'Report Date', 'Activity', 'Count/Hours', 'Submitted At']);
+
+        // Format header row
+        const headerRow = sheet.getRow(1);
+        headerRow.font = { bold: true };
+        headerRow.eachCell(cell => {
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFE0E0E0' }
+            };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        });
+
+        // Add data rows
+        for (const row of rows) {
+            const activities = JSON.parse(row.activities);
+            for (const activity of activities) {
+                sheet.addRow([
+                    row.uid,
+                    row.name,
+                    row.team,
+                    row.report_date,
+                    activity.name,
+                    activity.count,
+                    row.submitted_at
+                ]);
             }
+        }
 
-            try {
-                const workbook = new ExcelJS.Workbook();
-                const sheet = workbook.addWorksheet('Reports');
+        // Auto-filter for all columns to make analysis easier
+        sheet.autoFilter = {
+            from: { row: 1, column: 1 },
+            to: { row: 1, column: 7 }
+        };
 
-                // Add header row
-                sheet.addRow(['UID', 'Name', 'Team', 'Report Date', 'Activity', 'Count/Hours', 'Submitted At']);
+        // Make all columns wider for better visibility
+        sheet.columns.forEach(column => {
+            column.width = 20;
+        });
 
-                // Format header row
-                const headerRow = sheet.getRow(1);
-                headerRow.font = { bold: true };
-                headerRow.eachCell(cell => {
+        // Add conditional formatting for better readability
+        for (let i = 2; i <= sheet.rowCount; i++) {
+            const row = sheet.getRow(i);
+            // Alternate row colors for readability
+            if (i % 2 === 0) {
+                row.eachCell(cell => {
                     cell.fill = {
                         type: 'pattern',
                         pattern: 'solid',
-                        fgColor: { argb: 'FFE0E0E0' }
-                    };
-                    cell.border = {
-                        top: { style: 'thin' },
-                        left: { style: 'thin' },
-                        bottom: { style: 'thin' },
-                        right: { style: 'thin' }
+                        fgColor: { argb: 'FFFAFAFA' }
                     };
                 });
-
-                // Add data rows
-                for (const row of rows) {
-                    const activities = JSON.parse(row.activities);
-                    for (const activity of activities) {
-                        sheet.addRow([
-                            row.uid,
-                            row.name,
-                            row.team,
-                            row.report_date,
-                            activity.name,
-                            activity.count,
-                            row.submitted_at
-                        ]);
-                    }
-                }
-
-                // Auto-filter for all columns to make analysis easier
-                sheet.autoFilter = {
-                    from: { row: 1, column: 1 },
-                    to: { row: 1, column: 7 }
-                };
-
-                // Make all columns wider for better visibility
-                sheet.columns.forEach(column => {
-                    column.width = 20;
-                });
-
-                // Add conditional formatting for better readability
-                for (let i = 2; i <= sheet.rowCount; i++) {
-                    const row = sheet.getRow(i);
-                    // Alternate row colors for readability
-                    if (i % 2 === 0) {
-                        row.eachCell(cell => {
-                            cell.fill = {
-                                type: 'pattern',
-                                pattern: 'solid',
-                                fgColor: { argb: 'FFFAFAFA' }
-                            };
-                        });
-                    }
-                }
-
-                await workbook.xlsx.writeFile(EXCEL_FILE);
-                resolve();
-            } catch (error) {
-                reject(error);
             }
-        });
-    });
+        }
+
+        await workbook.xlsx.writeFile(EXCEL_FILE);
+    } catch (error) {
+        console.error('Error generating Excel from database:', error);
+        throw error;
+    }
 }
 
 // Download excel file - protected by authentication
@@ -508,4 +568,5 @@ app.get('/export', requireAdmin, async (req, res) => {
 // Health
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+// Initialize and start the application
+initializeApp();

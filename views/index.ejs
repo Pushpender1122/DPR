@@ -100,7 +100,7 @@
                                         <div class="flex flex-wrap items-center gap-2 mb-3">
                                             <% Object.keys(teamsConfig.teams).forEach((teamKey, index)=> {
                                                 const team = teamsConfig.teams[teamKey];
-                                                const teamId = teamKey.replace(/\s+/g, '').replace('&', '');
+                                                const teamId = teamKey.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
                                                 %>
                                                 <button type="button" id="show<%= teamId %>" data-active="false"
                                                     data-team="<%= teamKey %>"
@@ -130,7 +130,7 @@
 
                                         <% Object.keys(teamsConfig.teams).forEach((teamKey)=> {
                                             const team = teamsConfig.teams[teamKey];
-                                            const teamId = teamKey.replace(/\s+/g, '').replace('&', '');
+                                            const teamId = teamKey.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
                                             const sectionId = teamId.toLowerCase() + 'Activities';
                                             %>
                                             <div id="<%= sectionId %>" class="hidden">
