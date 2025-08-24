@@ -13,7 +13,142 @@ class DatabaseManager {
             ssl: { rejectUnauthorized: false }
         });
 
+        // Queue system for failed PostgreSQL operations
+        this.pgQueue = [];
+        this.maxRetries = 3;
+        this.retryInterval = 30000; // 30 seconds
+        this.isProcessingQueue = false;
 
+        // Start queue processor
+        this.startQueueProcessor();
+    }
+
+    // Queue management methods
+    startQueueProcessor() {
+        // Process queue every 30 seconds
+        setInterval(() => {
+            if (!this.isProcessingQueue && this.pgQueue.length > 0) {
+                this.processQueue();
+            }
+        }, this.retryInterval);
+    }
+
+    addToQueue(operation) {
+        const queueItem = {
+            ...operation,
+            retryCount: 0,
+            timestamp: new Date().toISOString(),
+            id: Date.now() + Math.random() // Simple unique ID
+        };
+
+        this.pgQueue.push(queueItem);
+        console.log(`📝 Added operation to queue. Queue size: ${this.pgQueue.length}`);
+        console.log(`📝 Queued operation:`, queueItem.type, queueItem.data?.uid || 'N/A');
+    }
+
+    async processQueue() {
+        if (this.isProcessingQueue || this.pgQueue.length === 0) {
+            return;
+        }
+
+        this.isProcessingQueue = true;
+        console.log(`🔄 Processing PostgreSQL queue (${this.pgQueue.length} items)...`);
+
+        const itemsToProcess = [...this.pgQueue];
+        this.pgQueue = []; // Clear the queue
+
+        for (const item of itemsToProcess) {
+            try {
+                let success = false;
+
+                switch (item.type) {
+                    case 'INSERT':
+                        success = await this.retryInsertToPG(item.data);
+                        break;
+                    case 'UPDATE':
+                        success = await this.retryUpdateInPG(item.originalData, item.data);
+                        break;
+                }
+
+                if (success) {
+                    console.log(`✅ Successfully processed queued ${item.type} for UID: ${item.data?.uid}`);
+                } else {
+                    // Failed again, re-queue if under retry limit
+                    this.handleFailedQueueItem(item);
+                }
+            } catch (error) {
+                console.error(`❌ Error processing queue item:`, error.message);
+                this.handleFailedQueueItem(item);
+            }
+        }
+
+        this.isProcessingQueue = false;
+
+        if (this.pgQueue.length > 0) {
+            console.log(`📝 Queue still has ${this.pgQueue.length} items to process`);
+        }
+    }
+
+    handleFailedQueueItem(item) {
+        item.retryCount++;
+
+        if (item.retryCount < this.maxRetries) {
+            // Re-queue for retry
+            this.pgQueue.push(item);
+            console.log(`⚠️  Re-queued ${item.type} for UID: ${item.data?.uid} (retry ${item.retryCount}/${this.maxRetries})`);
+        } else {
+            // Max retries reached, log as failed
+            console.error(`❌ Max retries reached for ${item.type} UID: ${item.data?.uid}. Discarding.`);
+        }
+    }
+
+    // Retry methods for queue processing
+    async retryInsertToPG(data) {
+        try {
+            const client = await this.pgPool.connect();
+            await client.query(`
+                INSERT INTO reports (uid, name, team, activities, report_date, submitted_at) 
+                VALUES ($1, $2, $3, $4, $5, $6)
+                ON CONFLICT (uid, report_date) 
+                DO UPDATE SET name=$2, team=$3, activities=$4, submitted_at=$6
+            `, [data.uid, data.name, data.team, data.activities, data.report_date, data.submitted_at]);
+            client.release();
+            return true;
+        } catch (error) {
+            console.error(`❌ Retry insert to PostgreSQL failed:`, error.message);
+            return false;
+        }
+    }
+
+    async retryUpdateInPG(originalData, newData) {
+        try {
+            const client = await this.pgPool.connect();
+
+            // Try updating by original uid and report_date
+            let result = await client.query(`
+                UPDATE reports 
+                SET uid=$1, name=$2, team=$3, activities=$4, report_date=$5 
+                WHERE uid=$6 AND report_date=$7
+            `, [newData.uid, newData.name, newData.team, newData.activities, newData.report_date,
+            originalData.uid, originalData.report_date]);
+
+            // If no rows affected, try insert with conflict resolution
+            if (result.rowCount === 0) {
+                await client.query(`
+                    INSERT INTO reports (uid, name, team, activities, report_date, submitted_at) 
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                    ON CONFLICT (uid, report_date) 
+                    DO UPDATE SET name=$2, team=$3, activities=$4
+                `, [newData.uid, newData.name, newData.team, newData.activities, newData.report_date,
+                originalData.submitted_at]);
+            }
+
+            client.release();
+            return true;
+        } catch (error) {
+            console.error(`❌ Retry update in PostgreSQL failed:`, error.message);
+            return false;
+        }
     }
 
     async initializeDatabases() {
@@ -179,7 +314,13 @@ class DatabaseManager {
                 console.log('✅ Saved to PostgreSQL');
             } catch (pgError) {
                 console.error('⚠️  PostgreSQL save failed:', pgError.message);
-                // Continue with SQLite even if PostgreSQL fails
+                console.log('📝 Adding to retry queue...');
+
+                // Add to queue for retry
+                this.addToQueue({
+                    type: 'INSERT',
+                    data: data
+                });
             }
 
             // Insert to SQLite
@@ -281,8 +422,14 @@ class DatabaseManager {
                 client.release();
             } catch (pgError) {
                 console.error('⚠️  PostgreSQL update failed:', pgError.message);
-                console.error('⚠️  PostgreSQL error details:', pgError);
-                // Continue with SQLite even if PostgreSQL fails
+                console.log('📝 Adding to retry queue...');
+
+                // Add to queue for retry
+                this.addToQueue({
+                    type: 'UPDATE',
+                    originalData: originalReport,
+                    data: data
+                });
             }
 
             // Update SQLite
@@ -474,6 +621,44 @@ class DatabaseManager {
             console.error('❌ Date migration failed:', error);
             // Don't throw error, just warn - this shouldn't stop the application
         }
+    }
+
+    // Queue monitoring methods
+    getQueueStatus() {
+        return {
+            queueSize: this.pgQueue.length,
+            isProcessing: this.isProcessingQueue,
+            items: this.pgQueue.map(item => ({
+                type: item.type,
+                uid: item.data?.uid,
+                retryCount: item.retryCount,
+                timestamp: item.timestamp
+            }))
+        };
+    }
+
+    clearQueue() {
+        const clearedCount = this.pgQueue.length;
+        this.pgQueue = [];
+        console.log(`🗑️  Cleared ${clearedCount} items from PostgreSQL retry queue`);
+        return clearedCount;
+    }
+
+    // Force process queue (for manual triggering)
+    async forceProcessQueue() {
+        if (this.isProcessingQueue) {
+            console.log('⏳ Queue is already being processed');
+            return false;
+        }
+
+        if (this.pgQueue.length === 0) {
+            console.log('📝 Queue is empty, nothing to process');
+            return false;
+        }
+
+        console.log('🔄 Manually triggering queue processing...');
+        await this.processQueue();
+        return true;
     }
 }
 

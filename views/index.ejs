@@ -262,6 +262,17 @@
         function updateCountInputs() {
             const countInputsContainer = document.getElementById('countInputsContainer');
             const countInputsSection = document.getElementById('countInputs');
+
+            // Store existing values before clearing
+            const existingValues = {};
+            const existingInputs = countInputsContainer.querySelectorAll('input[type="text"]');
+            existingInputs.forEach(input => {
+                if (input.value.trim() !== '') {
+                    existingValues[input.name] = input.value;
+                }
+            });
+
+            // Clear container
             countInputsContainer.innerHTML = '';
 
             const checkedActivities = document.querySelectorAll('input[name="activities[]"]:checked');
@@ -272,6 +283,7 @@
                 checkedActivities.forEach(checkbox => {
                     const activityName = checkbox.value;
                     const inputId = `count_${checkbox.id}`;
+                    const inputName = `counts[${activityName}]`;
 
                     const div = document.createElement('div');
                     div.className = 'mb-3';
@@ -281,7 +293,7 @@
                                 <label class="text-sm font-medium text-gray-700 break-words">${activityName}:</label>
                             </div>
                             <div class="flex-shrink-0 w-32">
-                                <input type="text" name="counts[${activityName}]" id="${inputId}" 
+                                <input type="text" name="${inputName}" id="${inputId}" 
                                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-3" 
                                     placeholder="Count/Hours" required>
                             </div>
@@ -289,6 +301,12 @@
                     `;
 
                     countInputsContainer.appendChild(div);
+
+                    // Restore the value if it existed before
+                    const input = document.getElementById(inputId);
+                    if (existingValues[inputName]) {
+                        input.value = existingValues[inputName];
+                    }
                 });
             } else {
                 countInputsSection.classList.add('hidden');

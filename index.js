@@ -565,6 +565,62 @@ app.get('/export', requireAdmin, async (req, res) => {
     }
 });
 
+// Queue monitoring endpoints
+app.get('/admin/queue', requireAdmin, (req, res) => {
+    try {
+        const queueStatus = dbManager.getQueueStatus();
+        res.json({
+            status: 'success',
+            queue: queueStatus
+        });
+    } catch (error) {
+        console.error('Error getting queue status:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to get queue status'
+        });
+    }
+});
+
+app.post('/admin/queue/clear', requireAdmin, (req, res) => {
+    try {
+        const clearedCount = dbManager.clearQueue();
+        res.json({
+            status: 'success',
+            message: `Cleared ${clearedCount} items from queue`
+        });
+    } catch (error) {
+        console.error('Error clearing queue:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to clear queue'
+        });
+    }
+});
+
+app.post('/admin/queue/process', requireAdmin, async (req, res) => {
+    try {
+        const processed = await dbManager.forceProcessQueue();
+        if (processed) {
+            res.json({
+                status: 'success',
+                message: 'Queue processing triggered'
+            });
+        } else {
+            res.json({
+                status: 'info',
+                message: 'Queue is empty or already being processed'
+            });
+        }
+    } catch (error) {
+        console.error('Error processing queue:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to process queue'
+        });
+    }
+});
+
 // Health
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
