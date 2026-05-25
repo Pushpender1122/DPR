@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String              @id @default(cuid())
+  email               String              @unique
+  name                String
+  password            String
+  role                Role                @default(GUARD)
+  shifts              Shift[]             @relation("GuardShifts")
+  clockIns            ClockIn[]
+  loneWorkerCheckins  LoneWorkerCheckin[]
+  clientSite          Site?               @relation("ClientSite", fields: [clientSiteId], references: [id])
+  clientSiteId        String?
+  createdAt           DateTime            @default(now())
+}
+
+enum Role {
+  ADMIN
+  GUARD
+  CLIENT
+}
+
+model Site {
+  id        String  @id @default(cuid())
+  name      String
+  address   String
+  lat       Float
+  lng       Float
+  shifts    Shift[]
+  clients   User[]  @relation("ClientSite")
+}
+
+model Shift {
+  id        String      @id @default(cuid())
+  guard     User        @relation("GuardShifts", fields: [guardId], references: [id])
+  guardId   String
+  site      Site        @relation(fields: [siteId], references: [id])
+  siteId    String
+  startTime DateTime
+  endTime   DateTime
+  payRate   Float
+  status    ShiftStatus @default(SCHEDULED)
+  clockIns  ClockIn[]
+  createdAt DateTime    @default(now())
+}
+
+enum ShiftStatus {
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  MISSED
+}
+
+model ClockIn {
+  id        String      @id @default(cuid())
+  guard     User        @relation(fields: [guardId], references: [id])
+  guardId   String
+  shift     Shift       @relation(fields: [shiftId], references: [id])
+  shiftId   String
+  timestamp DateTime    @default(now())
+  lat       Float
+  lng       Float
+  status    ClockStatus
+  createdAt DateTime    @default(now())
+}
+
+enum ClockStatus {
+  ON_TIME
+  LATE
+  WRONG_LOCATION
+}
+
+model Alert {
+  id        String    @id @default(cuid())
+  type      AlertType
+  message   String
+  guardName String
+  siteName  String
+  severity  Severity
+  read      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+}
+
+enum AlertType {
+  LATE_CLOCK_IN
+  MISSED_CLOCK_IN
+  LONE_WORKER_MISSED
+  WRONG_LOCATION
+  ON_TIME_CLOCK_IN
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model LoneWorkerCheckin {
+  id        String   @id @default(cuid())
+  guard     User     @relation(fields: [guardId], references: [id])
+  guardId   String
+  timestamp DateTime @default(now())
+  status    String
+}
